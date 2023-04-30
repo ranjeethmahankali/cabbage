@@ -1,7 +1,7 @@
 #include <Corrade/Containers/Pointer.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/GL/Renderer.h>
-// #include <Magnum/ImGuiIntegration/Context.h>
+#include <Magnum/ImGuiIntegration/Context.h>
 #include <Magnum/Platform/Sdl2Application.h>
 #include <Magnum/SceneGraph/Drawable.h>
 #include <Magnum/SceneGraph/MatrixTransformation2D.h>
@@ -10,7 +10,6 @@
 #include <Magnum/SceneGraph/SceneGraph.h>
 #include <Magnum/Tags.h>
 #include <imgui.h>
-#include <glm/glm.hpp>
 
 namespace baller {
 
@@ -30,7 +29,7 @@ protected:
   // void mouseMoveEvent(MouseMoveEvent& event) override;
   void drawEvent() override;
 
-  // ImGuiIntegration::Context                        mImGuiContext {NoCreate};
+  ImGuiIntegration::Context                        mImGuiContext {NoCreate};
   Containers::Pointer<Scene2D>                     mScene;
   Containers::Pointer<SceneGraph::DrawableGroup2D> mDrawables;
   Containers::Pointer<Object2D>                    mObjCamera;
@@ -52,12 +51,12 @@ App::App(const Arguments& args)
     create(conf, glConf.setSampleCount(0));
   }
   // Setup ImGui
-  // ImGui::CreateContext();
-  // ImGui::StyleColorsDark();
-  // mImGuiContext = ImGuiIntegration::Context {*ImGui::GetCurrentContext(),
-  //                                            Vector2 {windowSize()} / dpiScaling,
-  //                                            windowSize(),
-  //                                            framebufferSize()};
+  ImGui::CreateContext();
+  ImGui::StyleColorsDark();
+  mImGuiContext = ImGuiIntegration::Context {*ImGui::GetCurrentContext(),
+                                             Vector2 {windowSize()} / dpiScaling,
+                                             windowSize(),
+                                             framebufferSize()};
   GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::SourceAlpha,
                                  GL::Renderer::BlendFunction::OneMinusSourceAlpha);
   // Setup scene objects and camera.
@@ -70,7 +69,7 @@ App::App(const Arguments& args)
 void App::drawEvent()
 {
   GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
-  // mImGuiContext.newFrame();
+  mImGuiContext.newFrame();
   // Draw objects.
 }
 

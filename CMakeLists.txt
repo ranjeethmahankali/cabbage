@@ -15,12 +15,13 @@ set(CMAKE_TOOLCHAIN_FILE $ENV{VCPKG_PATH}/scripts/buildsystems/vcpkg.cmake)
 
 project(baller)
 
-# find_package(imgui CONFIG REQUIRED)
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/modules/" ${CMAKE_MODULE_PATH})
+
 find_package(Corrade REQUIRED Main)
 find_package(Magnum REQUIRED
   GL Primitives SceneGraph Shaders Sdl2Application
 )
-find_package(MagnumIntegration REQUIRED ImGui Glm)
+find_package(MagnumIntegration REQUIRED ImGui)
 
 add_executable(baller
   Main.cpp
@@ -33,6 +34,5 @@ target_link_libraries(baller PRIVATE
   Magnum::Primitives
   Magnum::SceneGraph
   Magnum::Shaders
-  # imgui::imgui
-  # MagnumIntegration::ImGui
+  MagnumIntegration::ImGui
 )
