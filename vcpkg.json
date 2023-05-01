@@ -2,23 +2,6 @@
   "name": "baller",
   "version-string": "0.0.0",
   "dependencies": [
-    "corrade",
-    {
-      "name": "magnum",
-      "features": [
-        "gl",
-        "primitives",
-        "scenegraph",
-        "shaders",
-        "sdl2application"
-      ]
-    },
-    {
-      "name": "magnum-integration",
-      "features": [
-        "imgui",
-        "glm"
-      ]
-    }
+    "box2d"
   ]
 }
