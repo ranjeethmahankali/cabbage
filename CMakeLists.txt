@@ -10,16 +10,34 @@ if(NOT DEFINED ENV{VCPKG_PATH})
 endif()
 
 set(VCPKG_FEATURE_FLAGS versions)
-set(VCPKG_TARGET_TRIPLET x64-linux)
-set(CMAKE_TOOLCHAIN_FILE $ENV{VCPKG_PATH}/scripts/buildsystems/vcpkg.cmake)
+if (WIN32)
+   set(VCPKG_TARGET_TRIPLET x64-windows)
+   file(TO_CMAKE_PATH $ENV{VCPKG_PATH} VCPKG_PATH)
+   set(CMAKE_TOOLCHAIN_FILE ${VCPKG_PATH}/scripts/buildsystems/vcpkg.cmake)
+   add_compile_definitions(_USE_MATH_DEFINES)
+else()
+   set(VCPKG_TARGET_TRIPLET x64-linux)
+   set(CMAKE_TOOLCHAIN_FILE $ENV{VCPKG_PATH}/scripts/buildsystems/vcpkg.cmake)
+endif()
 
-project(baller)
+project(cabbage)
 
 find_package(box2d CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
+find_package(glew REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 
-add_executable(baller
+add_executable(cabbage
   Main.cpp
+  GLUtil.cpp
 )
-target_link_libraries(baller PRIVATE
+target_link_libraries(cabbage PRIVATE
   box2d::box2d
+  GLEW::GLEW
+  glfw
+  glm::glm
+  spdlog::spdlog
+  spdlog::spdlog_header_only
 )
+target_include_directories(cabbage PRIVATE "./")

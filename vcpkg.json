@@ -1,7 +1,11 @@
 {
-  "name": "baller",
+  "name": "cabbage",
   "version-string": "0.0.0",
   "dependencies": [
-    "box2d"
+    "box2d",
+    "glm",
+    "glew",
+    "glfw3",
+    "spdlog"
   ]
 }
