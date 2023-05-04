@@ -14,10 +14,10 @@ enum Type : uint8_t
 {
   NOSQUARE       = 0,
   SQUARE         = 1,
-  NOBALL         = 2,
-  BALL           = 3,
-  BALL_SPWN      = 4,
-  USED_BALL_SPWN = 5,
+  BALL_SPWN      = 2,
+  USED_BALL_SPWN = 3,
+  NOBALL         = 4,
+  BALL           = 5,
 };
 
 struct Object
@@ -46,6 +46,7 @@ public:
   static constexpr float  BallRadius = CellSize * 0.1f;
 
   explicit Arena(b2World& world);
+  int advance(uint32_t seed);
 
 private:
   static constexpr int                  EMPTY      = -1;

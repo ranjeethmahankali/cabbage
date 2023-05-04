@@ -14,6 +14,7 @@ static glm::vec2 calcSquareShape(int si, std::array<b2Vec2, 4>& verts)
 {
   glm::vec2 center =
     glm::vec2 {0.5f, 0.5f} + glm::vec2 {float(si % Arena::NX), float(si / Arena::NX)};
+  center.y                   = Arena::Height - center.y;
   glm::vec2                y = {0.f, 0.5f * Arena::SquareSize};
   glm::vec2                x = {0.5f * Arena::SquareSize, 0.f};
   std::array<glm::vec2, 4> temp;
@@ -33,7 +34,8 @@ Arena::Arena(b2World& world)
   auto squares = getSquares();
   std::fill(squares.begin(), squares.end(), Object(NOSQUARE));
   auto balls = getBalls();
-  std::fill(balls.begin(), balls.end(), Object(NOBALL));
+  balls[0]   = Object(BALL);
+  std::fill(balls.begin() + 1, balls.end(), Object(NOBALL));
   initGridBody();
   auto& grid = *mGrid;
   for (size_t i = 0; i < squares.size(); ++i) {
@@ -56,6 +58,28 @@ Arena::Arena(b2World& world)
     shape.m_radius = BallRadius;
     dst.mFixture   = dst.mBody->CreateFixture(&shape, 0.f);
   }
+}
+
+int Arena::advance(uint32_t seed)
+{
+  auto squares = getSquares();
+  auto begin   = squares.begin();
+  auto end     = squares.begin() + NX;
+  if (std::any_of(begin, end, [](const Object& sq) { return sq.mType == SQUARE; })) {
+    return 1;
+  }
+  std::srand(seed);
+  while (begin != end) {
+    auto& sq = *(begin++);
+    // TODO: Weighted sampling.
+    sq.mType = Type(std::rand() % 3);
+    // TODO: Properly assign mData.
+    if (sq.mType == SQUARE) {
+      sq.mData = 1;
+    }
+  }
+  std::rotate(squares.begin(), end, squares.end());
+  return 0;
 }
 
 void Arena::initGridBody()
