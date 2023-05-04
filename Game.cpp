@@ -1,20 +1,60 @@
 #include <Game.h>
+#include <box2d/b2_body.h>
+#include <box2d/b2_math.h>
 #include <box2d/b2_polygon_shape.h>
 #include <box2d/box2d.h>
+#include <algorithm>
+#include <string>
 
-static constexpr float SQ_SIZE = 0.45f;
+Object::Object(Type type)
+    : mType(type)
+{}
+
+static glm::vec2 calcSquareShape(int si, std::array<b2Vec2, 4>& verts)
+{
+  glm::vec2 center =
+    glm::vec2 {0.5f, 0.5f} + glm::vec2 {float(si % Arena::NX), float(si / Arena::NX)};
+  glm::vec2                y = {0.f, 0.5f * Arena::SquareSize};
+  glm::vec2                x = {0.5f * Arena::SquareSize, 0.f};
+  std::array<glm::vec2, 4> temp;
+  temp[0] = center - x - y;
+  temp[1] = center + x - y;
+  temp[2] = center + x + y;
+  temp[3] = center - x + y;
+  std::transform(temp.begin(), temp.end(), verts.begin(), [](glm::vec2 v) {
+    return b2Vec2(v[0], v[1]);
+  });
+  return center;
+}
 
 Arena::Arena(b2World& world)
     : mWorld(world)
 {
-  mSquares.fill({EMPTY, nullptr});
+  auto squares = getSquares();
+  std::fill(squares.begin(), squares.end(), Object(NOSQUARE));
+  auto balls = getBalls();
+  std::fill(balls.begin(), balls.end(), Object(NOBALL));
   initGridBody();
   auto& grid = *mGrid;
-  for (size_t i = 0; i < mSquares.size(); ++i) {
-    auto&          dst = mSquares[i];
-    b2PolygonShape square;
-    square.SetAsBox(SQ_SIZE, SQ_SIZE);
-    dst.mFixture = grid.CreateFixture(&square, 0.f);
+  for (size_t i = 0; i < squares.size(); ++i) {
+    auto&                 dst = squares[i];
+    b2PolygonShape        shape;
+    std::array<b2Vec2, 4> verts;
+    dst.mPos = calcSquareShape(i, verts);
+    shape.Set(verts.data(), int(verts.size()));
+    dst.mFixture = grid.CreateFixture(&shape, 0.f);
+  }
+  for (size_t i = 0; i < balls.size(); ++i) {
+    auto&     dst = balls[i];
+    b2BodyDef def;
+    def.type   = b2_dynamicBody;
+    def.bullet = true;
+    def.position.Set(0.f, 0.f);
+    dst.mBody = mWorld.CreateBody(&def);
+    b2CircleShape shape;
+    shape.m_p.Set(0.f, 0.f);
+    shape.m_radius = BallRadius;
+    dst.mFixture   = dst.mBody->CreateFixture(&shape, 0.f);
   }
 }
 
@@ -24,4 +64,34 @@ void Arena::initGridBody()
   def.type = b2_staticBody;
   def.position.Set(0.f, 0.f);
   mGrid = mWorld.CreateBody(&def);
+}
+
+std::span<Object> Arena::getSquares()
+{
+  return std::span<Object>(mObjects.begin(), NGrid);
+}
+
+std::span<Object> Arena::getBalls()
+{
+  return std::span<Object>(mObjects.begin() + NGrid, NMaxBalls);
+}
+
+static std::string vertShader()
+{
+  const char sTemplate[] = R"(
+
+#version 330 core
+
+layout(location = 0) in vec2 position;
+layout(location = 1) in vec3 colOrTex;
+
+out vec3 ColorOrTex;
+
+void main()
+{
+  gl_Position = vec4(position, 0.0, 1.0);
+  ColorOrTex   = colOrTex;
+}
+
+)";
 }
