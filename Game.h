@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <glm/glm.hpp>
 #include <span>
+#include <string>
 
 class b2Body;
 class b2World;
@@ -49,8 +50,6 @@ public:
   int advance(uint32_t seed);
 
 private:
-  static constexpr int                  EMPTY      = -1;
-  static constexpr int                  MULTIPLIER = -2;
   std::array<Object, NGrid + NMaxBalls> mObjects;
   b2Body*                               mGrid = nullptr;
   b2World&                              mWorld;
@@ -60,3 +59,5 @@ private:
   std::span<Object> getSquares();
   std::span<Object> getBalls();
 };
+
+std::string vertShader();

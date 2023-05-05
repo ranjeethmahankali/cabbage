@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <GLUtil.h>
+#include <Game.h>
 
 static void glfw_error_cb(int error, const char* desc)
 {
@@ -25,7 +26,7 @@ int initGL(GLFWwindow*& window)
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
   std::string title = "Potato";
-  window            = glfwCreateWindow(1920, 960, title.c_str(), nullptr, nullptr);
+  window = glfwCreateWindow(Arena::Width, Arena::Height, title.c_str(), nullptr, nullptr);
   if (window == nullptr) {
     return 1;
   }
@@ -53,7 +54,7 @@ int initGL(GLFWwindow*& window)
   return 0;
 }
 
-int main(int argc, char** argv)
+static int game()
 {
   GLFWwindow* window = nullptr;
   try {
@@ -80,4 +81,10 @@ int main(int argc, char** argv)
     return 1;
   }
   return 0;
+}
+
+int main(int argc, char** argv)
+{
+  // return game();
+  std::cout << vertShader() << std::endl;
 }

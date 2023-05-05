@@ -27,6 +27,7 @@ find_package(glm CONFIG REQUIRED)
 find_package(glew REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 
 add_executable(cabbage
   Main.cpp
@@ -40,5 +41,6 @@ target_link_libraries(cabbage PRIVATE
   glm::glm
   spdlog::spdlog
   spdlog::spdlog_header_only
+  fmt::fmt-header-only
 )
 target_include_directories(cabbage PRIVATE "./")
