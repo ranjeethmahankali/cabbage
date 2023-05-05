@@ -111,9 +111,11 @@ std::string vertShader()
 #version 330 core
 
 layout(location = 0) in vec2 position;
-// layout(location = 1) in vec3 colOrTex;
+layout(location = 1) in int data;
+layout(location = 2) in int type;
 
-// out vec3 ColorOrTex;
+out int Data;
+out int Type;
 
 void main()
 {{
@@ -126,4 +128,102 @@ void main()
 )";
   return fmt::format(
     sTemplate, fmt::arg("width", Arena::Width), fmt::arg("height", Arena::Height));
+}
+
+std::string geoShader()
+{
+  static constexpr char sTemplate[] = R"(
+#version 330 core
+
+layout (points) in;
+
+const int NOSQUARE       = {nosq};
+const int SQUARE         = {sq};
+const int BALL_SPWN      = {bspwn};
+const int USED_BALL_SPWN = {ubspwn};
+const int NOBALL         = {nbl};
+const int BALL           = {bl};
+
+const vec2 x = vec2({xx:.8f}, 0.);
+const vec2 y = vec2(0., {yy:.8f});
+
+in int Data;
+in int Type;
+out int FData;
+out int FType;
+
+void main() {{
+  if (Type == SQUARE) {{
+    // First triangle.
+    gl_Position = gl_in[0].gl_Position - x - y; 
+    EmitVertex();
+    gl_Position = gl_in[0].gl_Position + x - y; 
+    EmitVertex();
+    gl_Position = gl_in[0].gl_Position + x + y; 
+    EmitVertex();
+    // Second triangle.
+    gl_Position = gl_in[0].gl_Position - x - y; 
+    EmitVertex();
+    gl_Position = gl_in[0].gl_Position + x + y; 
+    EmitVertex();
+    gl_Position = gl_in[0].gl_Position - x + y; 
+    EmitVertex();
+    EndPrimitive();
+  }}
+  FData = Data;
+  FType = Type;
+}}
+
+)";
+  return fmt::format(sTemplate,
+                     fmt::arg("nosq", int(NOSQUARE)),
+                     fmt::arg("sq", int(SQUARE)),
+                     fmt::arg("bspwn", int(BALL_SPWN)),
+                     fmt::arg("ubspwn", int(USED_BALL_SPWN)),
+                     fmt::arg("nbl", int(NOBALL)),
+                     fmt::arg("bl", int(BALL)),
+                     fmt::arg("xx", Arena::SquareSize / Arena::Width),
+                     fmt::arg("yy", Arena::SquareSize / Arena::Height));
+}
+
+std::string fragShader()
+{
+  static constexpr char sTemplate[] = R"(
+#version 330 core
+
+out vec4 FragColor;
+
+in int FData;
+in int FType;
+
+const int NOSQUARE       = {nosq};
+const int SQUARE         = {sq};
+const int BALL_SPWN      = {bspwn};
+const int USED_BALL_SPWN = {ubspwn};
+const int NOBALL         = {nbl};
+const int BALL           = {bl};
+
+void main()
+{{
+  if (FType == SQUARE) {{
+    FragColor = vec4(1., 1., 0., 1.);
+  }}
+}}
+
+)";
+  return fmt::format(sTemplate,
+                     fmt::arg("nosq", int(NOSQUARE)),
+                     fmt::arg("sq", int(SQUARE)),
+                     fmt::arg("bspwn", int(BALL_SPWN)),
+                     fmt::arg("ubspwn", int(USED_BALL_SPWN)),
+                     fmt::arg("nbl", int(NOBALL)),
+                     fmt::arg("bl", int(BALL)));
+}
+
+static void initAttributes()
+{
+  static constexpr size_t stride     = sizeof(Object);
+  static const void*      posOffset  = (void*)(&(((Object*)nullptr)->mPos));
+  static const void*      dataOffset = (void*)(&(((Object*)nullptr)->mData));
+  static const void*      typeOffset = (void*)(&(((Object*)nullptr)->mType));
 }

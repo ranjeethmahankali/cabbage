@@ -86,5 +86,8 @@ static int game()
 int main(int argc, char** argv)
 {
   // return game();
-  std::cout << vertShader() << std::endl;
+  // std::cout << vertShader() << std::endl;
+  std::cout << geoShader() << std::endl;
+  std::cout << "=====\nFragmentShader\n=====\n";
+  std::cout << fragShader() << std::endl;
 }

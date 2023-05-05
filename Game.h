@@ -11,7 +11,7 @@ class b2Body;
 class b2World;
 class b2Fixture;
 
-enum Type : uint8_t
+enum Type : int
 {
   NOSQUARE       = 0,
   SQUARE         = 1,
@@ -61,3 +61,5 @@ private:
 };
 
 std::string vertShader();
+std::string geoShader();
+std::string fragShader();
