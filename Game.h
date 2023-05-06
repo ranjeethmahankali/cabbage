@@ -26,8 +26,15 @@ struct Object
   b2Fixture* mFixture = nullptr;
   b2Body*    mBody    = nullptr;
   glm::vec2  mPos     = {0.f, 0.f};
-  int        mData    = 0;
-  Type       mType    = NOSQUARE;
+  union
+  {
+    struct
+    {
+      int  mData = 0;
+      Type mType = NOSQUARE;
+    };
+    uint64_t mAttributes;
+  };
 
   Object() = default;
   explicit Object(Type type);
@@ -36,15 +43,15 @@ struct Object
 class Arena
 {
 public:
-  static constexpr size_t NX         = 7;
-  static constexpr size_t NY         = 8;
-  static constexpr size_t NGrid      = NX * NY;
-  static constexpr size_t NMaxBalls  = 2048;
-  static constexpr float  CellSize   = 100.f;
-  static constexpr float  SquareSize = 85.f;
-  static constexpr float  Height     = float(NY) * CellSize;
-  static constexpr float  Width      = float(NX) * CellSize;
-  static constexpr float  BallRadius = CellSize * 0.1f;
+  static constexpr uint32_t NX         = 7;
+  static constexpr uint32_t NY         = 8;
+  static constexpr uint32_t NGrid      = NX * NY;
+  static constexpr uint32_t NMaxBalls  = 2048;
+  static constexpr float    CellSize   = 100.f;
+  static constexpr float    SquareSize = 85.f;
+  static constexpr float    Height     = float(NY) * CellSize;
+  static constexpr float    Width      = float(NX) * CellSize;
+  static constexpr float    BallRadius = CellSize * 0.1f;
 
   explicit Arena(b2World& world);
   void draw() const;
@@ -61,6 +68,7 @@ private:
   void              initGL();
   void              freeGL();
   std::span<Object> getSquares();
+  std::span<Object> getRow(uint32_t i);
   std::span<Object> getBalls();
   uint32_t          mVao = 0;
   uint32_t          mVbo = 0;

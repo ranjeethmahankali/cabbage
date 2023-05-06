@@ -68,6 +68,7 @@ static int game()
       b2World world(b2Vec2(0.f, 0.f));
       Arena   arena(world);
       arena.advance(42);
+      arena.advance(23);
       view::Shader shader;
       shader.use();
       // TODO: Initialize and use shader
