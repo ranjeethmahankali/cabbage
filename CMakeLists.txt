@@ -41,6 +41,11 @@ target_link_libraries(cabbage PRIVATE
   glm::glm
   spdlog::spdlog
   spdlog::spdlog_header_only
-  fmt::fmt-header-only
+  fmt::fmt
 )
 target_include_directories(cabbage PRIVATE "./")
+
+if (WIN32)
+  set_property(TARGET cabbage PROPERTY
+      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
