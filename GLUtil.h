@@ -5,6 +5,7 @@
 #include <spdlog/spdlog.h>
 
 #ifdef _MSVC
+#define DEBUG_BREAK __debugbreak()
 #else
 #define DEBUG_BREAK __builtin_trap()
 #endif
