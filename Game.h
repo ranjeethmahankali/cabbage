@@ -30,10 +30,10 @@ struct Object
   {
     struct
     {
-      int  mData = 0;
-      Type mType = NOSQUARE;
+      int  mData;
+      Type mType;
     };
-    uint64_t mAttributes;
+    uint64_t mAttributes = 0;
   };
 
   Object() = default;
