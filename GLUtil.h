@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 
-#ifdef _MSVC
+#ifdef WIN32
 #define DEBUG_BREAK __debugbreak()
 #else
 #define DEBUG_BREAK __builtin_trap()
