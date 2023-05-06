@@ -39,7 +39,6 @@ void clear_errors()
 static std::string vertShaderSrc()
 {
   static constexpr char sTemplate[] = R"(
-
 #version 330 core
 
 layout(location = 0) in vec2 position;
@@ -58,7 +57,6 @@ void main()
   pos.y = 2. * (position.y / {height:.8f}) - 1.;
   gl_Position = vec4(pos.xy, 0., 1.);
 }}
-
 )";
   return fmt::format(
     sTemplate, fmt::arg("width", Arena::Width), fmt::arg("height", Arena::Height));
@@ -95,31 +93,36 @@ void main() {{
   FData = Data[0];
   FType = Type[0];
   ObjPos = gl_in[0].gl_Position.xy;
-  vec2 x;
-  vec2 y;
+  vec2 x = vec2(0,0);
+  vec2 y = vec2(0,0);
+  bool emit = false;
   if (Type[0] == SQUARE) {{
     x = sqx;
     y = sqy;
+    emit = true;
   }} else if (Type[0] == BALL) {{
     x = vec2(BallSizeX, 0.);
     y = vec2(0., BallSizeY);
+    emit = true;
   }}
   else if (Type[0] == BALL_SPWN) {{
     x = sqx * 0.75;
     y = sqy * 0.75;
+    emit = true;
   }}
-  vec2 pos = gl_in[0].gl_Position.xy;
-  gl_Position = vec4(pos - x - y, 0., 1.);
-  EmitVertex();
-  gl_Position = vec4(pos + x - y, 0., 1.);
-  EmitVertex();
-  gl_Position = vec4(pos - x + y, 0., 1.);
-  EmitVertex();
-  gl_Position = vec4(pos + x + y, 0., 1.);
-  EmitVertex();
-  EndPrimitive();
+  if (emit) {{
+    vec2 pos = gl_in[0].gl_Position.xy;
+    gl_Position = vec4(pos - x - y, 0., 1.);
+    EmitVertex();
+    gl_Position = vec4(pos + x - y, 0., 1.);
+    EmitVertex();
+    gl_Position = vec4(pos - x + y, 0., 1.);
+    EmitVertex();
+    gl_Position = vec4(pos + x + y, 0., 1.);
+    EmitVertex();
+    EndPrimitive();
+  }}
 }}
-
 )";
   return fmt::format(sTemplate,
                      fmt::arg("nosq", int(NOSQUARE)),
@@ -179,8 +182,7 @@ void main()
     int lt = int(floor(r));
     r = fract(r);
     FragColor = vec4(Colors[lt] * (1. - r) + Colors[rt] * r, 1.);
-  }}
-  else if (FType == BALL) {{
+  }} else if (FType == BALL) {{
     vec2 fc = gl_FragCoord.xy;
     fc.x /= Width;
     fc.y /= Height;
@@ -210,7 +212,6 @@ void main()
     else FragColor = Invisible;
   }}
 }}
-
 )";
   return fmt::format(sTemplate,
                      fmt::arg("nosq", int(NOSQUARE)),
