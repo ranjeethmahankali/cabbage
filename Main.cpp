@@ -2,6 +2,7 @@
 
 #include <GLUtil.h>
 #include <Game.h>
+#include <box2d/box2d.h>
 
 static void glfw_error_cb(int error, const char* desc)
 {
@@ -64,6 +65,9 @@ static int game()
       return err;
     }
     {
+      b2World world(b2Vec2(0.f, 0.f));
+      Arena   arena(world);
+      arena.advance(42);
       view::Shader shader;
       shader.use();
       // TODO: Initialize and use shader
@@ -71,7 +75,8 @@ static int game()
         glfwPollEvents();
         glClearColor(0.1f, 0.1f, 0.1f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        // TODO: Draw stuff here.
+        // Draw stuff.
+        arena.draw();
         glfwSwapBuffers(window);
       }
     }

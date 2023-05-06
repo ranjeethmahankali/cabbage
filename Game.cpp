@@ -64,7 +64,13 @@ Arena::Arena(b2World& world)
     dst.mFixture->GetUserData().pointer = reinterpret_cast<uintptr_t>(&dst);
   }
   // Prep for rendering.
-  initVao();
+  initGL();
+}
+
+void Arena::draw() const
+{
+  GL_CALL(glBindVertexArray(mVao));
+  GL_CALL(glDrawArrays(GL_POINTS, 0, mObjects.size()));
 }
 
 static void initAttributes()
@@ -73,39 +79,46 @@ static void initAttributes()
   static const void*      posOffset  = (void*)(&(((Object*)nullptr)->mPos));
   static const void*      dataOffset = (void*)(&(((Object*)nullptr)->mData));
   static const void*      typeOffset = (void*)(&(((Object*)nullptr)->mType));
-  GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, posOffset));
+  GL_CALL(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, posOffset));
   GL_CALL(glEnableVertexAttribArray(0));
-  GL_CALL(glVertexAttribPointer(1, 1, GL_INT, GL_FALSE, stride, dataOffset));
+  GL_CALL(glVertexAttribIPointer(1, 1, GL_INT, stride, dataOffset));
   GL_CALL(glEnableVertexAttribArray(1));
-  GL_CALL(glVertexAttribPointer(2, 1, GL_INT, GL_FALSE, stride, dataOffset));
+  GL_CALL(glVertexAttribIPointer(2, 1, GL_INT, stride, typeOffset));
   GL_CALL(glEnableVertexAttribArray(2));
 }
 
-void Arena::initVao()
+void Arena::initGL()
 {
   // Create and bind the vertex array.
   GL_CALL(glGenVertexArrays(1, &mVao));
+  GL_CALL(glGenBuffers(1, &mVbo));
   GL_CALL(glBindVertexArray(mVao));
+  GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, mVbo));
   // Copy data.
   GL_CALL(glBufferData(
     GL_ARRAY_BUFFER, sizeof(Object) * mObjects.size(), mObjects.data(), GL_DYNAMIC_DRAW));
   // Initialize the attributes.
   initAttributes();
   // Unbind.
+  GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
   GL_CALL(glBindVertexArray(0));
 }
 
-void Arena::freeVao()
+void Arena::freeGL()
 {
   if (mVao) {
     GL_CALL(glDeleteVertexArrays(1, &mVao));
     mVao = 0;
   }
+  if (mVbo) {
+    GL_CALL(glDeleteBuffers(1, &mVbo));
+    mVbo = 0;
+  }
 }
 
 Arena::~Arena()
 {
-  freeVao();
+  freeGL();
 }
 
 int Arena::advance(uint32_t seed)
@@ -127,6 +140,13 @@ int Arena::advance(uint32_t seed)
     }
   }
   std::rotate(squares.begin(), end, squares.end());
+  // Update GL buffers accordingly.
+  GL_CALL(glBindVertexArray(mVao));
+  GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, mVbo));
+  GL_CALL(glBufferSubData(
+    GL_ARRAY_BUFFER, 0, sizeof(Object) * mObjects.size(), mObjects.data()));
+  GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+  GL_CALL(glBindVertexArray(0));
   return 0;
 }
 

@@ -55,6 +55,8 @@ void main()
   pos.x = 2. * (position.x / {width:.8f}) - 1.;
   pos.y = 2. * (position.y / {height:.8f}) - 1.;
   gl_Position = vec4(pos, 0.0, 1.0);
+  Data = data;
+  Type = type;
 }}
 
 )";
@@ -134,6 +136,9 @@ void main()
 {{
   if (FType == SQUARE) {{
     FragColor = vec4(1., 1., 0., 1.);
+  }}
+  else {{
+    FragColor = vec4(1., 0., 0., 1.);
   }}
 }}
 

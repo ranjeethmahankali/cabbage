@@ -41,13 +41,14 @@ public:
   static constexpr size_t NGrid      = NX * NY;
   static constexpr size_t NMaxBalls  = 2048;
   static constexpr float  CellSize   = 100.f;
-  static constexpr float  SquareSize = 95.f;
+  static constexpr float  SquareSize = 85.f;
   static constexpr float  Height     = float(NY) * CellSize;
   static constexpr float  Width      = float(NX) * CellSize;
   static constexpr float  BallRadius = CellSize * 0.1f;
 
   explicit Arena(b2World& world);
-  int advance(uint32_t seed);
+  void draw() const;
+  int  advance(uint32_t seed);
   ~Arena();
 
 private:
@@ -57,9 +58,10 @@ private:
 
 private:
   void              initGridBody();
-  void              initVao();
-  void              freeVao();
+  void              initGL();
+  void              freeGL();
   std::span<Object> getSquares();
   std::span<Object> getBalls();
   uint32_t          mVao = 0;
+  uint32_t          mVbo = 0;
 };
