@@ -206,6 +206,6 @@ std::span<Object> Arena::getBalls()
 void Arena::addBall()
 {
   auto& ball = getBalls()[mNumBalls++];
-  ball.mPos  = glm::vec2(mBallX, 0.f);
+  ball.mPos  = glm::vec2(mBallX, BallRadius);
   ball.mType = BALL;
 }

@@ -48,13 +48,11 @@ layout(location = 2) in int type;
 
 out int Data;
 out int Type;
-out vec2 ObjPos;
 
 void main()
 {{
   Data = data;
   Type = type;
-  ObjPos = position;
   vec2 pos = position;
   pos.x = 2. * (position.x / {width:.8f}) - 1.;
   pos.y = 2. * (position.y / {height:.8f}) - 1.;
@@ -65,6 +63,9 @@ void main()
   return fmt::format(
     sTemplate, fmt::arg("width", Arena::Width), fmt::arg("height", Arena::Height));
 }
+
+static constexpr glm::vec2 GlslBallDim =
+  2.f * glm::vec2 {Arena::BallRadius / Arena::Width, Arena::BallRadius / Arena::Height};
 
 static std::string geoShader()
 {
@@ -80,32 +81,40 @@ const int USED_BALL_SPWN = {ubspwn};
 const int NOBALL         = {nbl};
 const int BALL           = {bl};
 
-const vec2 x = vec2({xx:.8f}, 0.);
-const vec2 y = vec2(0., {yy:.8f});
+const vec2 sqx = vec2({xx:.8f}, 0.);
+const vec2 sqy = vec2(0., {yy:.8f});
+const float BallSizeX = {bsizex:.8f};
+const float BallSizeY = {bsizey:.8f};
 
 in int Data[];
 in int Type[];
-in vec2 ObjPos[];
 flat out int FData;
 flat out int FType;
-flat out vec2 FObjPos;
+flat out vec2 ObjPos;
 
 void main() {{
   FData = Data[0];
   FType = Type[0];
-  FObjPos = ObjPos[0];
+  ObjPos = gl_in[0].gl_Position.xy;
+  vec2 x;
+  vec2 y;
   if (Type[0] == SQUARE) {{
-    vec2 pos = gl_in[0].gl_Position.xy;
-    gl_Position = vec4(pos - x - y, 0., 1.); 
-    EmitVertex();
-    gl_Position = vec4(pos + x - y, 0., 1.); 
-    EmitVertex();
-    gl_Position = vec4(pos - x + y, 0., 1.); 
-    EmitVertex();
-    gl_Position = vec4(pos + x + y, 0., 1.); 
-    EmitVertex();
-    EndPrimitive();
+    x = sqx;
+    y = sqy;
+  }} else if (Type[0] == BALL) {{
+    x = vec2(BallSizeX, 0.);
+    y = vec2(0., BallSizeY);
   }}
+  vec2 pos = gl_in[0].gl_Position.xy;
+  gl_Position = vec4(pos - x - y, 0., 1.);
+  EmitVertex();
+  gl_Position = vec4(pos + x - y, 0., 1.);
+  EmitVertex();
+  gl_Position = vec4(pos - x + y, 0., 1.);
+  EmitVertex();
+  gl_Position = vec4(pos + x + y, 0., 1.);
+  EmitVertex();
+  EndPrimitive();
 }}
 
 )";
@@ -117,7 +126,9 @@ void main() {{
                      fmt::arg("nbl", int(NOBALL)),
                      fmt::arg("bl", int(BALL)),
                      fmt::arg("xx", Arena::SquareSize / Arena::Width),
-                     fmt::arg("yy", Arena::SquareSize / Arena::Height));
+                     fmt::arg("yy", Arena::SquareSize / Arena::Height),
+                     fmt::arg("bsizex", GlslBallDim.x),
+                     fmt::arg("bsizey", GlslBallDim.y));
 }
 
 static std::string fragShaderSrc()
@@ -129,7 +140,7 @@ out vec4 FragColor;
 
 flat in int FData;
 flat in int FType;
-flat in vec2 FObjPos;
+flat in vec2 ObjPos;
 
 const vec3 Colors[7] = vec3[](
   vec3(1, 1, 0),
@@ -141,8 +152,13 @@ const vec3 Colors[7] = vec3[](
   vec3(1, 0.5, 0)
 );
 
-const float BallRadius = {brad:.8f};
+const float BallSizeX = {bsizex:.8f};
+const float BallSizeY = {bsizey:.8f};
+const float Width = {ww:.8f};
+const float Height = {hh:.8f};
 const int MaxData = 50;
+const vec4 Invisible = vec4(0, 0, 0, 0);
+const float BallFeather = 0.95;
 
 const int NOSQUARE       = {nosq};
 const int SQUARE         = {sq};
@@ -161,9 +177,19 @@ void main()
     FragColor = vec4(Colors[lt] * (1. - r) + Colors[rt] * r, 1.);
   }}
   else if (FType == BALL) {{
-    float dist = distance(gl_FragCoord.xy, FObjPos);
-    if (dist < BallRadius) {{
-      FragColor = vec4(1., 1., 1., 1.);
+    vec2 fc = gl_FragCoord.xy;
+    fc.x /= Width;
+    fc.y /= Height;
+    fc = 2 * fc - vec2(1, 1);
+    vec2 d = fc - ObjPos;
+    d.x /= BallSizeX;
+    d.y /= BallSizeY;
+    float r = min(1, max(0, 1 - sqrt(dot(d, d))));
+    r = 1 - pow(1 - r, 3);
+    if (r > 0) {{
+      FragColor = vec4(r, r, r, 1);
+    }} else {{
+      FragColor = Invisible;
     }}
   }}
 }}
@@ -176,7 +202,10 @@ void main()
                      fmt::arg("ubspwn", int(USED_BALL_SPWN)),
                      fmt::arg("nbl", int(NOBALL)),
                      fmt::arg("bl", int(BALL)),
-                     fmt::arg("brad", float(2.f * Arena::BallRadius)));
+                     fmt::arg("bsizex", GlslBallDim.x),
+                     fmt::arg("bsizey", GlslBallDim.y),
+                     fmt::arg("ww", Arena::Width),
+                     fmt::arg("hh", Arena::Height));
 }
 
 static void checkShaderCompilation(uint32_t id, uint32_t type)
