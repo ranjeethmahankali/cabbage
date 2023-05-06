@@ -12,6 +12,6 @@ IF "%CONFIG%"=="build" (
     COPY ./compile_commands.json ../
 ) ELSE (
     cmake -DCMAKE_BUILD_TYPE=%CONFIG% ..
-    printf "Starting build using %s threads...\n" %NUM_THREADS%
-    cmake --build . --config %CONFIG% --target %TARGET% -j %NUM_THREADS%
+    printf "Starting build using %s threads...\n" "%NUM_THREADS%"
+    cmake --build . --config "%CONFIG%" --target "%TARGET%" -j %NUM_THREADS%
 )

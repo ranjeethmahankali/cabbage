@@ -11,7 +11,7 @@ endif()
 
 set(VCPKG_FEATURE_FLAGS versions)
 if (WIN32)
-   set(VCPKG_TARGET_TRIPLET x64-windows)
+   set(VCPKG_TARGET_TRIPLET x64-windows-static)
    file(TO_CMAKE_PATH $ENV{VCPKG_PATH} VCPKG_PATH)
    set(CMAKE_TOOLCHAIN_FILE ${VCPKG_PATH}/scripts/buildsystems/vcpkg.cmake)
    add_compile_definitions(_USE_MATH_DEFINES)
