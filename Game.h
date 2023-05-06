@@ -62,14 +62,17 @@ private:
   std::array<Object, NGrid + NMaxBalls> mObjects;
   b2Body*                               mGrid = nullptr;
   b2World&                              mWorld;
+  uint32_t                              mCounter = 1;
+  uint32_t                              mVao     = 0;
+  uint32_t                              mVbo     = 0;
 
 private:
   void              initGridBody();
   void              initGL();
   void              freeGL();
+  void              bindGL() const;
+  void              unbindGL() const;
   std::span<Object> getSquares();
   std::span<Object> getRow(uint32_t i);
   std::span<Object> getBalls();
-  uint32_t          mVao = 0;
-  uint32_t          mVbo = 0;
 };

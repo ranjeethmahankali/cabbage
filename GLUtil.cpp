@@ -51,12 +51,12 @@ out int Type;
 
 void main()
 {{
+  Data = data;
+  Type = type;
   vec2 pos = position;
   pos.x = 2. * (position.x / {width:.8f}) - 1.;
   pos.y = 2. * (position.y / {height:.8f}) - 1.;
-  gl_Position = vec4(pos, 0.0, 1.0);
-  Data = data;
-  Type = type;
+  gl_Position = vec4(pos.xy, 0., 1.);
 }}
 
 )";
@@ -87,6 +87,8 @@ flat out int FData;
 flat out int FType;
 
 void main() {{
+  FData = Data[0];
+  FType = Type[0];
   if (Type[0] == SQUARE) {{
     vec2 pos = gl_in[0].gl_Position.xy;
     gl_Position = vec4(pos - x - y, 0., 1.); 
@@ -99,8 +101,6 @@ void main() {{
     EmitVertex();
     EndPrimitive();
   }}
-  FData = Data[0];
-  FType = Type[0];
 }}
 
 )";
@@ -115,7 +115,7 @@ void main() {{
                      fmt::arg("yy", Arena::SquareSize / Arena::Height));
 }
 
-static std::string fragShader()
+static std::string fragShaderSrc()
 {
   static constexpr char sTemplate[] = R"(
 #version 330 core
@@ -124,6 +124,18 @@ out vec4 FragColor;
 
 flat in int FData;
 flat in int FType;
+
+const vec3 Colors[7] = vec3[](
+  vec3(1, 1, 0),
+  vec3(0, 1, 0),
+  vec3(0, 0, 1),
+  vec3(0.29, 0, 0.51),
+  vec3(0.93, 0.51, 0.93),
+  vec3(1, 0, 0),
+  vec3(1, 0.5, 0)
+);
+
+const int MaxData = 50;
 
 const int NOSQUARE       = {nosq};
 const int SQUARE         = {sq};
@@ -135,10 +147,11 @@ const int BALL           = {bl};
 void main()
 {{
   if (FType == SQUARE) {{
-    FragColor = vec4(1., 1., 0., 1.);
-  }}
-  else {{
-    FragColor = vec4(1., 0., 0., 1.);
+    float r = 7. * min(1., float(FData - 1) / float(MaxData - 1));
+    int rt = int(ceil(r));
+    int lt = int(floor(r));
+    r = fract(r);
+    FragColor = vec4(Colors[lt] * (1. - r) + Colors[rt] * r, 1.);
   }}
 }}
 
@@ -216,7 +229,7 @@ Shader::Shader()
   }
   uint32_t fsId = 0;
   {  // Compile fragment shader.
-    std::string src  = fragShader();
+    std::string src  = fragShaderSrc();
     fsId             = glCreateShader(GL_FRAGMENT_SHADER);
     const char* cstr = src.c_str();
     GL_CALL(glShaderSource(fsId, 1, &cstr, nullptr));

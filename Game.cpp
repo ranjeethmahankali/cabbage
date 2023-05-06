@@ -69,7 +69,7 @@ Arena::Arena(b2World& world)
 
 void Arena::draw() const
 {
-  GL_CALL(glBindVertexArray(mVao));
+  bindGL();
   GL_CALL(glDrawArrays(GL_POINTS, 0, mObjects.size()));
 }
 
@@ -92,16 +92,13 @@ void Arena::initGL()
   // Create and bind the vertex array.
   GL_CALL(glGenVertexArrays(1, &mVao));
   GL_CALL(glGenBuffers(1, &mVbo));
-  GL_CALL(glBindVertexArray(mVao));
-  GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, mVbo));
+  bindGL();
   // Copy data.
   GL_CALL(glBufferData(
     GL_ARRAY_BUFFER, sizeof(Object) * mObjects.size(), mObjects.data(), GL_DYNAMIC_DRAW));
   // Initialize the attributes.
   initAttributes();
-  // Unbind.
-  GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
-  GL_CALL(glBindVertexArray(0));
+  unbindGL();
 }
 
 void Arena::freeGL()
@@ -157,17 +154,28 @@ int Arena::advance(uint32_t seed)
     sq.mType = Type(std::rand() % 3);
     // TODO: Properly assign mData.
     if (sq.mType == SQUARE) {
-      sq.mData = 1;
+      sq.mData = mCounter;
     }
   }
+  ++mCounter;
   // Update GL buffers accordingly.
-  GL_CALL(glBindVertexArray(mVao));
-  GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, mVbo));
+  bindGL();
   GL_CALL(glBufferSubData(
     GL_ARRAY_BUFFER, 0, sizeof(Object) * mObjects.size(), mObjects.data()));
+  unbindGL();
+  return 0;
+}
+
+void Arena::bindGL() const
+{
+  GL_CALL(glBindVertexArray(mVao));
+  GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, mVbo));
+}
+
+void Arena::unbindGL() const
+{
   GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
   GL_CALL(glBindVertexArray(0));
-  return 0;
 }
 
 void Arena::initGridBody()
