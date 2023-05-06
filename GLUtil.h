@@ -39,4 +39,18 @@ spdlog::logger& logger();
 bool            log_errors(const char* function, const char* file, uint line);
 void            clear_errors();
 
+class Shader
+{
+public:
+  Shader();
+  ~Shader();
+  void use() const;
+  void free();
+  Shader(const Shader&) = delete;
+  Shader(Shader&&)      = delete;
+
+private:
+  uint32_t mId = 0;
+};
+
 }  // namespace view

@@ -63,13 +63,17 @@ static int game()
       view::logger().error("Failed to initialize the viewier. Error code {}.", err);
       return err;
     }
-    // TODO: Initialize and use shader
-    while (!glfwWindowShouldClose(window)) {
-      glfwPollEvents();
-      glClearColor(0.1f, 0.1f, 0.1f, 1.f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      // TODO: Draw stuff here.
-      glfwSwapBuffers(window);
+    {
+      view::Shader shader;
+      shader.use();
+      // TODO: Initialize and use shader
+      while (!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+        glClearColor(0.1f, 0.1f, 0.1f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // TODO: Draw stuff here.
+        glfwSwapBuffers(window);
+      }
     }
     view::logger().info("Closing window...\n");
     glfwDestroyWindow(window);
@@ -85,9 +89,5 @@ static int game()
 
 int main(int argc, char** argv)
 {
-  // return game();
-  // std::cout << vertShader() << std::endl;
-  std::cout << geoShader() << std::endl;
-  std::cout << "=====\nFragmentShader\n=====\n";
-  std::cout << fragShader() << std::endl;
+  return game();
 }

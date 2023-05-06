@@ -48,6 +48,7 @@ public:
 
   explicit Arena(b2World& world);
   int advance(uint32_t seed);
+  ~Arena();
 
 private:
   std::array<Object, NGrid + NMaxBalls> mObjects;
@@ -56,10 +57,9 @@ private:
 
 private:
   void              initGridBody();
+  void              initVao();
+  void              freeVao();
   std::span<Object> getSquares();
   std::span<Object> getBalls();
+  uint32_t          mVao = 0;
 };
-
-std::string vertShader();
-std::string geoShader();
-std::string fragShader();
