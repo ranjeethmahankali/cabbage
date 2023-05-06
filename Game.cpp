@@ -30,14 +30,15 @@ static glm::vec2 calcSquareShape(int si, std::array<b2Vec2, 4>& verts)
   return center;
 }
 
+Object::Object() {}
+
 Arena::Arena(b2World& world)
     : mWorld(world)
 {
   auto squares = getSquares();
   std::fill(squares.begin(), squares.end(), Object(NOSQUARE));
   auto balls = getBalls();
-  balls[0]   = Object(BALL);
-  std::fill(balls.begin() + 1, balls.end(), Object(NOBALL));
+  std::fill(balls.begin(), balls.end(), Object(NOBALL));
   initGridBody();
   auto& grid = *mGrid;
   for (uint32_t i = 0; i < squares.size(); ++i) {
@@ -63,6 +64,7 @@ Arena::Arena(b2World& world)
     dst.mFixture                        = dst.mBody->CreateFixture(&shape, 0.f);
     dst.mFixture->GetUserData().pointer = reinterpret_cast<uintptr_t>(&dst);
   }
+  addBall();
   // Prep for rendering.
   initGL();
 }
@@ -199,4 +201,11 @@ std::span<Object> Arena::getRow(uint32_t i)
 std::span<Object> Arena::getBalls()
 {
   return std::span<Object>(mObjects.begin() + NGrid, NMaxBalls);
+}
+
+void Arena::addBall()
+{
+  auto& ball = getBalls()[mNumBalls++];
+  ball.mPos  = glm::vec2(mBallX, 0.f);
+  ball.mType = BALL;
 }

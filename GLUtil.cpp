@@ -48,11 +48,13 @@ layout(location = 2) in int type;
 
 out int Data;
 out int Type;
+out vec2 ObjPos;
 
 void main()
 {{
   Data = data;
   Type = type;
+  ObjPos = position;
   vec2 pos = position;
   pos.x = 2. * (position.x / {width:.8f}) - 1.;
   pos.y = 2. * (position.y / {height:.8f}) - 1.;
@@ -83,12 +85,15 @@ const vec2 y = vec2(0., {yy:.8f});
 
 in int Data[];
 in int Type[];
+in vec2 ObjPos[];
 flat out int FData;
 flat out int FType;
+flat out vec2 FObjPos;
 
 void main() {{
   FData = Data[0];
   FType = Type[0];
+  FObjPos = ObjPos[0];
   if (Type[0] == SQUARE) {{
     vec2 pos = gl_in[0].gl_Position.xy;
     gl_Position = vec4(pos - x - y, 0., 1.); 
@@ -124,6 +129,7 @@ out vec4 FragColor;
 
 flat in int FData;
 flat in int FType;
+flat in vec2 FObjPos;
 
 const vec3 Colors[7] = vec3[](
   vec3(1, 1, 0),
@@ -135,6 +141,7 @@ const vec3 Colors[7] = vec3[](
   vec3(1, 0.5, 0)
 );
 
+const float BallRadius = {brad:.8f};
 const int MaxData = 50;
 
 const int NOSQUARE       = {nosq};
@@ -153,6 +160,12 @@ void main()
     r = fract(r);
     FragColor = vec4(Colors[lt] * (1. - r) + Colors[rt] * r, 1.);
   }}
+  else if (FType == BALL) {{
+    float dist = distance(gl_FragCoord.xy, FObjPos);
+    if (dist < BallRadius) {{
+      FragColor = vec4(1., 1., 1., 1.);
+    }}
+  }}
 }}
 
 )";
@@ -162,7 +175,8 @@ void main()
                      fmt::arg("bspwn", int(BALL_SPWN)),
                      fmt::arg("ubspwn", int(USED_BALL_SPWN)),
                      fmt::arg("nbl", int(NOBALL)),
-                     fmt::arg("bl", int(BALL)));
+                     fmt::arg("bl", int(BALL)),
+                     fmt::arg("brad", float(2.f * Arena::BallRadius)));
 }
 
 static void checkShaderCompilation(uint32_t id, uint32_t type)

@@ -36,7 +36,7 @@ struct Object
     uint64_t mAttributes = 0;
   };
 
-  Object() = default;
+  Object();
   explicit Object(Type type);
 };
 
@@ -62,9 +62,11 @@ private:
   std::array<Object, NGrid + NMaxBalls> mObjects;
   b2Body*                               mGrid = nullptr;
   b2World&                              mWorld;
-  uint32_t                              mCounter = 1;
-  uint32_t                              mVao     = 0;
-  uint32_t                              mVbo     = 0;
+  uint32_t                              mCounter  = 1;
+  uint32_t                              mNumBalls = 0;
+  uint32_t                              mVao      = 0;
+  uint32_t                              mVbo      = 0;
+  float                                 mBallX    = 3.5f * CellSize;
 
 private:
   void              initGridBody();
@@ -75,4 +77,5 @@ private:
   std::span<Object> getSquares();
   std::span<Object> getRow(uint32_t i);
   std::span<Object> getBalls();
+  void              addBall();
 };
