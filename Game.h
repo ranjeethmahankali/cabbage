@@ -13,12 +13,11 @@ class b2Fixture;
 
 enum Type : int
 {
-  NOSQUARE       = 0,
-  SQUARE         = 1,
-  BALL_SPWN      = 2,
-  USED_BALL_SPWN = 3,
-  NOBALL         = 4,
-  BALL           = 5,
+  NOSQUARE  = 0,
+  SQUARE    = 1,
+  BALL_SPWN = 2,
+  NOBALL    = 3,
+  BALL      = 4,
 };
 
 struct Object
