@@ -56,7 +56,7 @@ static void getFontData(std::vector<uint8_t>&           textureData,
                         uint32_t&                       charHeight)
 {
   static constexpr std::string_view sErr       = "Unable to load font data";
-  static constexpr uint32_t         FontHeight = uint32_t(0.3f * Arena::SquareSize);
+  static constexpr uint32_t         FontHeight = uint32_t(0.25f * Arena::SquareSize);
   logger().info("Loading font...");
   FT_Library ftlib;
   if (FT_Init_FreeType(&ftlib)) {
@@ -91,7 +91,7 @@ static void getFontData(std::vector<uint8_t>&           textureData,
         "The font face does not provide uniform height numerical characters.");
       return;
     }
-    sizes[i]    = {int(width), int(height)};
+    sizes[i]    = glm::ivec2 {int(width), int(height)};
     bearings[i] = glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top);
     offsets[i]  = textureData.size();
     advances[i] = face->glyph->advance.x;
@@ -118,14 +118,18 @@ class CharAtlas
     std::vector<uint8_t>       textureData;
     std::array<size_t, NChars> offsets;
     getFontData(textureData, offsets, mSizes, mBearings, mAdvances, mCharHeight);
-    uint32_t texWidth = std::accumulate(
-      mSizes.begin(),
-      mSizes.end(),
-      uint32_t(0),
-      [](uint32_t total, glm::ivec2 s) -> uint32_t { return total + uint32_t(s[0]); });
-    mTexture.resize(mCharHeight * texWidth);
-    float    wf        = float(mCharHeight);
-    float    hf        = float(texWidth);
+    uint32_t tileX = uint32_t(
+      std::max_element(mSizes.begin(), mSizes.end(), [](glm::ivec2 a, glm::ivec2 b) {
+        return a[0] < b[0];
+      })->x);
+    uint32_t texWidth = tileX * NChars;
+    // make it a multiple of 4 for alignment.
+    if (texWidth % 4) {
+      texWidth += 4 - (texWidth % 4);
+    }
+    mTexture.resize(mCharHeight * texWidth, 0);
+    float    wf        = float(texWidth);
+    float    hf        = float(mCharHeight);
     uint8_t* tilestart = mTexture.data();
     uint32_t tx        = 0;
     for (int i = 0; i < NChars; ++i) {
@@ -133,14 +137,14 @@ class CharAtlas
       uint8_t* src    = textureData.data() + offset;
       auto     dims   = mSizes[i];
       uint8_t* dst    = tilestart;
-      tilestart += dims[0];
+      tilestart += tileX;
       for (uint32_t r = 0; r < dims.y; r++) {
         std::copy_n(src, dims.x, dst);
         src += dims.x;
         dst += texWidth;
       }
       mTexCoords[i] = {float(tx) / wf, 0.f, float(tx + dims.x) / wf, 1.f};
-      tx += dims.x;
+      tx += tileX;
     }
     // Init OpenGL texture.
     GLint pixformat = GL_RED;
@@ -400,9 +404,9 @@ vec4 sampleFont(vec2 fc) {{
       fc.y /= p2.y - p1.y;
       vec4 tc = CharTxCoords[d];
       fc.x = tc.x + fc.x * (tc.z - tc.x);
-      fc.y = tc.y + fc.y * (tc.w - tc.y);
-      float t = texture(CharTexture, fc).r;
-      return vec4(t, t, t, t);
+      fc.y = 1 - (tc.y + fc.y * (tc.w - tc.y));
+      float t = 1 - texture(CharTexture, fc).r;
+      return vec4(t, t, t, 1 - t);
     }}
     cur.x += CharAdvances[d];
   }}
