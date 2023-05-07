@@ -366,11 +366,12 @@ uniform sampler2D CharTexture;
 vec4 sampleFont(vec2 fc) {{
   int digits[4] = int[](-1, -1, -1, -1);
   int data = FData;
-  int base = 1000;
-  int nDigits = 0;
-  while (data > 0 && nDigits < 4) {{
-    digits[nDigits++] = data / base;
-    base /= 10;
+  int base = 10;
+  int nDigits = max(1, int(ceil(log(float(FData)) / log(10.))));
+  for (int i = nDigits - 1; i > -1; --i) {{
+    digits[i] = data % base;
+    data = (data - digits[i]) / base;
+    base *= 10;
   }}
   vec2 bmin = vec2(1, 1);
   vec2 bmax = vec2(-1,-1);
