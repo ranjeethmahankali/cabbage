@@ -1,15 +1,13 @@
 #include <GLUtil.h>
 #include <Game.h>
+#include <freetype/freetype.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 #include <array>
 #include <iomanip>
 #include <numeric>
 #include <sstream>
-
-#include <freetype2/ft2build.h>
 #include <string_view>
-#include FT_FREETYPE_H
 
 #include <Font.h>
 
