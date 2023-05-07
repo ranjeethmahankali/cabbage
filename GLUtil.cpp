@@ -2,6 +2,14 @@
 #include <Game.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
+#include <array>
+#include <numeric>
+
+#include <freetype2/ft2build.h>
+#include <string_view>
+#include FT_FREETYPE_H
+
+#include <Font.h>
 
 namespace view {
 
@@ -35,6 +43,99 @@ void clear_errors()
     error = glGetError();
   }
 }
+
+static constexpr size_t NChars = 10;  // Just the numerical characters.
+
+static void getFontData(std::vector<uint8_t>&           textureData,
+                        std::array<size_t, NChars>&     offsets,
+                        std::array<glm::ivec2, NChars>& sizes,
+                        std::array<glm::ivec2, NChars>& bearings,
+                        std::array<uint32_t, NChars>    advances,
+                        uint32_t&                       charHeight)
+{
+  static constexpr std::string_view sErr       = "Unable to load font data";
+  static constexpr uint32_t         FontHeight = uint32_t(0.3f * Arena::SquareSize);
+  logger().info("Loading font...");
+  FT_Library ftlib;
+  if (FT_Init_FreeType(&ftlib)) {
+    logger().error(sErr);
+    return;
+  }
+  FT_Face face;
+  if (FT_New_Memory_Face(
+        ftlib, CascadiaMono_ttf.data(), CascadiaMono_ttf.size(), 0, &face)) {
+    logger().error(sErr);
+    return;
+  }
+  if (FT_Set_Pixel_Sizes(face, 0, FontHeight)) {
+    logger().error(sErr);
+    return;
+  }
+  char ch[2];
+  ch[1] = '\0';
+  for (int i = 0; i < 10; ++i) {
+    std::sprintf(ch, "%d", i);
+    if (FT_Load_Char(face, ch[0], FT_LOAD_RENDER)) {
+      logger().error(sErr);
+      return;
+    }
+    uint32_t width  = face->glyph->bitmap.width;
+    uint32_t height = face->glyph->bitmap.rows;
+    if (i == 0) {
+      charHeight = height;
+    }
+    else if (charHeight != height) {
+      logger().error(
+        "The font face does not provide uniform height numerical characters.");
+      return;
+    }
+    sizes[i]    = {int(width), int(height)};
+    bearings[i] = glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top);
+    offsets[i]  = textureData.size();
+    advances[i] = face->glyph->advance.x;
+    std::copy_n(reinterpret_cast<uint8_t*>(face->glyph->bitmap.buffer),
+                width * height,
+                std::back_inserter(textureData));
+  }
+}
+
+class CharAtlas
+{
+  std::array<glm::ivec2, NChars> mBearings;
+  std::array<glm::ivec2, NChars> mSizes;
+  std::array<uint32_t, NChars>   mAdvances;
+  std::array<glm::vec4, NChars>  mTexCoords;
+  uint32_t                       mCharHeight;
+  std::vector<uint8_t>           mTexture;
+
+  CharAtlas()
+  {
+    std::vector<uint8_t>       textureData;
+    std::array<size_t, NChars> offsets;
+    getFontData(textureData, offsets, mSizes, mBearings, mAdvances, mCharHeight);
+    uint32_t texWidth = std::accumulate(
+      mSizes.begin(),
+      mSizes.end(),
+      uint32_t(0),
+      [](uint32_t total, glm::ivec2 s) -> uint32_t { return total + uint32_t(s[0]); });
+    mTexture.resize(mCharHeight * texWidth);
+    float    wf        = float(mCharHeight);
+    float    hf        = float(texWidth);
+    uint8_t* tilestart = mTexture.data();
+    for (int i = 0; i < NChars; ++i) {
+      size_t   offset = offsets[i];
+      uint8_t* src    = textureData.data() + offset;
+      auto     dims   = mSizes[i];
+      uint8_t* dst    = tilestart;
+      tilestart += dims[0];
+      for (uint32_t r = 0; r < dims.y; r++) {
+        std::copy_n(src, dims.x, dst);
+        src += dims.x;
+        dst += texWidth;
+      }
+    }
+  }
+};
 
 static std::string vertShaderSrc()
 {
@@ -174,19 +275,33 @@ const int BALL_SPWN      = {bspwn};
 const int NOBALL         = {nbl};
 const int BALL           = {bl};
 
+vec4 sampleFont() {{
+  int digits[4] = int[](-1, -1, -1, -1);
+  int data = FData;
+  int base = 1000;
+  int nDigits = 0;
+  while (data > 0 && nDigits < 4) {{
+    digits[nDigits++] = data / base;
+    base /= 10;
+  }}
+  return vec4(0, 0, 0, 0);
+}}
+
 void main()
 {{
+  vec2 fc = gl_FragCoord.xy;
+  fc.x /= Width;
+  fc.y /= Height;
+  fc = 2 * fc - vec2(1, 1);
   if (FType == SQUARE) {{
     float r = 7. * min(1., float(FData - 1) / float(MaxData - 1));
     int rt = int(ceil(r));
     int lt = int(floor(r));
     r = fract(r);
-    FragColor = vec4(Colors[lt] * (1. - r) + Colors[rt] * r, 1.);
+    vec4 baseColor = vec4(Colors[lt] * (1. - r) + Colors[rt] * r, 1.);
+    vec4 fontColor = sampleFont();
+    FragColor = fontColor.a * fontColor + (1. - fontColor.a) * baseColor;
   }} else if (FType == BALL) {{
-    vec2 fc = gl_FragCoord.xy;
-    fc.x /= Width;
-    fc.y /= Height;
-    fc = 2 * fc - vec2(1, 1);
     vec2 d = fc - ObjPos;
     d.x /= BallSizeX;
     d.y /= BallSizeY;
@@ -195,10 +310,6 @@ void main()
     if (r > 0) FragColor = vec4(r, r, r, 1);
     else FragColor = Invisible;
   }} else if (FType == BALL_SPWN) {{
-    vec2 fc = gl_FragCoord.xy;
-    fc.x /= Width;
-    fc.y /= Height;
-    fc = 2 * fc - vec2(1, 1);
     vec2 d = fc - ObjPos;
     const float s1 = 0.25;
     const float s2 = 0.45;
@@ -271,6 +382,7 @@ static void checkShaderLinking(uint32_t progId)
 
 Shader::Shader()
 {
+  getFontData();
   uint32_t vsId = 0;
   {  // Compile vertex shader.
     std::string src  = vertShaderSrc();
