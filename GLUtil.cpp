@@ -52,7 +52,7 @@ static void getFontData(std::vector<uint8_t>&           textureData,
                         std::array<size_t, NChars>&     offsets,
                         std::array<glm::ivec2, NChars>& sizes,
                         std::array<glm::ivec2, NChars>& bearings,
-                        std::array<uint32_t, NChars>    advances,
+                        std::array<uint32_t, NChars>&   advances,
                         uint32_t&                       charHeight)
 {
   static constexpr std::string_view sErr       = "Unable to load font data";
