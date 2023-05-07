@@ -3,7 +3,9 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 #include <array>
+#include <iomanip>
 #include <numeric>
+#include <sstream>
 
 #include <freetype2/ft2build.h>
 #include <string_view>
@@ -97,6 +99,8 @@ static void getFontData(std::vector<uint8_t>&           textureData,
                 width * height,
                 std::back_inserter(textureData));
   }
+  FT_Done_Face(face);
+  FT_Done_FreeType(ftlib);
 }
 
 class CharAtlas
@@ -107,6 +111,7 @@ class CharAtlas
   std::array<glm::vec4, NChars>  mTexCoords;
   uint32_t                       mCharHeight;
   std::vector<uint8_t>           mTexture;
+  uint32_t                       mTexId = 0;
 
   CharAtlas()
   {
@@ -122,6 +127,7 @@ class CharAtlas
     float    wf        = float(mCharHeight);
     float    hf        = float(texWidth);
     uint8_t* tilestart = mTexture.data();
+    uint32_t tx        = 0;
     for (int i = 0; i < NChars; ++i) {
       size_t   offset = offsets[i];
       uint8_t* src    = textureData.data() + offset;
@@ -133,7 +139,81 @@ class CharAtlas
         src += dims.x;
         dst += texWidth;
       }
+      mTexCoords[i] = {float(tx) / wf, 0.f, float(tx + dims.x) / wf, 1.f};
+      tx += dims.x;
     }
+    // Init OpenGL texture.
+    GLint pixformat = GL_RED;
+    GL_CALL(glGenTextures(1, &mTexId));
+    GL_CALL(glBindTexture(GL_TEXTURE_2D, mTexId));
+    GL_CALL(glTexImage2D(GL_TEXTURE_2D,
+                         0,
+                         GL_RED,
+                         texWidth,
+                         mCharHeight,
+                         0,
+                         GL_RED,
+                         GL_UNSIGNED_BYTE,
+                         mTexture.data()));
+    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+  }
+
+  ~CharAtlas()
+  {
+    if (mTexId) {
+      GL_CALL(glDeleteTextures(1, &mTexId));
+      mTexId = 0;
+    }
+  }
+
+public:
+  void bind() const { GL_CALL(glBindTexture(GL_TEXTURE_2D, mTexId)); }
+
+  static CharAtlas& get()
+  {
+    static CharAtlas sAtlas;
+    return sAtlas;
+  }
+
+  const glm::vec4& textureCoords(int digit) { return mTexCoords[digit]; }
+
+  std::string glslConstants() const
+  {
+    std::stringstream ss;
+    ss << "const vec2 CharSizes[" << NChars << "] = vec2[](\n";
+    for (int i = 0; i < NChars; ++i) {
+      glm::vec2 s = 2.f * glm::vec2 {float(mSizes[i].x) / Arena::Width,
+                                     float(mSizes[i].y / Arena::Height)};
+      ss << "  vec2(" << s.x << ", " << s.y << ")" << (i + 1 < NChars ? "," : "") << "\n";
+    }
+    ss << ");\n";
+    ss << "const vec2 CharBearings[" << NChars << "] = vec2[](\n";
+    for (int i = 0; i < NChars; ++i) {
+      glm::vec2 s = 2.f * glm::vec2 {float(mBearings[i].x) / Arena::Width,
+                                     float(mBearings[i].y / Arena::Height)};
+      ss << "  vec2(" << s.x << ", " << s.y << ")" << (i + 1 < NChars ? "," : "") << "\n";
+    }
+    ss << ");\n";
+    ss << "const float CharAdvances[" << NChars << "] = float[](";
+    ss << std::setprecision(8);
+    for (int i = 0; i < NChars; ++i) {
+      // Advances need to be divided by 64 to get the number of pixels.
+      float a = 2.f * float(mAdvances[i] >> 6) / Arena::Width;
+      ss << a << (i + 1 < NChars ? ", " : "");
+    }
+    ss << ");\n";
+    ss << "const vec4 CharTxCoords[" << NChars << "] = vec4[](\n";
+    for (int i = 0; i < NChars; ++i) {
+      const auto& t = mTexCoords[i];
+      ss << "  vec4(" << t[0] << ", " << t[1] << ", " << t[2] << ", " << t[3] << ")"
+         << (i + 1 < NChars ? "," : "") << "\n";
+    }
+    ss << ");\n";
+    return ss.str();
   }
 };
 
@@ -258,6 +338,8 @@ const vec3 Colors[7] = vec3[](
   vec3(1, 0.5, 0)
 );
 
+{CharConstants}
+
 const float SqSizeX = {xx:.8f};
 const float SqSizeY = {yy:.8f};
 const float BallSizeX = {bsizex:.8f};
@@ -275,7 +357,9 @@ const int BALL_SPWN      = {bspwn};
 const int NOBALL         = {nbl};
 const int BALL           = {bl};
 
-vec4 sampleFont() {{
+uniform sampler2D CharTexture;
+
+vec4 sampleFont(vec2 fc) {{
   int digits[4] = int[](-1, -1, -1, -1);
   int data = FData;
   int base = 1000;
@@ -283,6 +367,44 @@ vec4 sampleFont() {{
   while (data > 0 && nDigits < 4) {{
     digits[nDigits++] = data / base;
     base /= 10;
+  }}
+  vec2 bmin = vec2(1, 1);
+  vec2 bmax = vec2(-1,-1);
+  vec2 cur = vec2(0, 0);
+  for (int i = 0; i < nDigits; ++i) {{
+    int d = digits[i];
+    vec2 bearing = CharBearings[d];
+    vec2 size = CharSizes[d];
+    vec2 pos = vec2(cur.x + bearing.x, cur.y - (size.y - bearing.y));
+    bmin.y = min(bmin.y, pos.y);
+    bmin.x = min(bmin.x, pos.x);
+    bmax.y = max(bmax.y, pos.y);
+    bmax.x = max(bmax.x, pos.x);
+    pos += size;
+    bmin.y = min(bmin.y, pos.y);
+    bmin.x = min(bmin.x, pos.x);
+    bmax.y = max(bmax.y, pos.y);
+    bmax.x = max(bmax.x, pos.x);
+    cur.x += CharAdvances[d];
+  }}
+  cur = ObjPos + 0.5 * (bmin - bmax);
+  for (int i = 0; i < nDigits; ++i) {{
+    int d = digits[i];
+    vec2 bearing = CharBearings[d];
+    vec2 size = CharSizes[d];
+    vec2 p1 = vec2(cur.x + bearing.x, cur.y - (size.y - bearing.y));
+    vec2 p2 = p1 + size;
+    if (p1.x <= fc.x && p1.y <= fc.y && fc.x <= p2.x && fc.y <= p2.y) {{
+      fc = fc - p1;
+      fc.x /= p2.x - p1.x;
+      fc.y /= p2.y - p1.y;
+      vec4 tc = CharTxCoords[d];
+      fc.x = tc.x + fc.x * (tc.z - tc.x);
+      fc.y = tc.y + fc.y * (tc.w - tc.y);
+      float t = texture(CharTexture, fc).r;
+      return vec4(t, t, t, t);
+    }}
+    cur.x += CharAdvances[d];
   }}
   return vec4(0, 0, 0, 0);
 }}
@@ -299,7 +421,7 @@ void main()
     int lt = int(floor(r));
     r = fract(r);
     vec4 baseColor = vec4(Colors[lt] * (1. - r) + Colors[rt] * r, 1.);
-    vec4 fontColor = sampleFont();
+    vec4 fontColor = sampleFont(fc);
     FragColor = fontColor.a * fontColor + (1. - fontColor.a) * baseColor;
   }} else if (FType == BALL) {{
     vec2 d = fc - ObjPos;
@@ -335,7 +457,8 @@ void main()
                      fmt::arg("ww", Arena::Width),
                      fmt::arg("hh", Arena::Height),
                      fmt::arg("xx", Arena::SquareSize / Arena::Width),
-                     fmt::arg("yy", Arena::SquareSize / Arena::Height));
+                     fmt::arg("yy", Arena::SquareSize / Arena::Height),
+                     fmt::arg("CharConstants", CharAtlas::get().glslConstants()));
 }
 
 static void checkShaderCompilation(uint32_t id, uint32_t type)
@@ -382,7 +505,6 @@ static void checkShaderLinking(uint32_t progId)
 
 Shader::Shader()
 {
-  getFontData();
   uint32_t vsId = 0;
   {  // Compile vertex shader.
     std::string src  = vertShaderSrc();
@@ -421,6 +543,8 @@ Shader::Shader()
   GL_CALL(glDeleteShader(vsId));
   GL_CALL(glDeleteShader(gsId));
   GL_CALL(glDeleteShader(fsId));
+  // Bind texture for text rendering.
+  CharAtlas::get().bind();
 }
 
 void Shader::use() const
