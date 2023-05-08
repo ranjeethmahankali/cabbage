@@ -26,7 +26,7 @@ int initGL(GLFWwindow*& window)
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-  std::string title = "Potato";
+  std::string title = "Cabbage";
   window = glfwCreateWindow(Arena::Width, Arena::Height, title.c_str(), nullptr, nullptr);
   if (window == nullptr) {
     return 1;
