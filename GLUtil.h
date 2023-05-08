@@ -4,7 +4,8 @@
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 
-#ifdef _MSVC
+#ifdef WIN32
+#define DEBUG_BREAK __debugbreak()
 #else
 #define DEBUG_BREAK __builtin_trap()
 #endif
@@ -38,5 +39,19 @@ namespace view {
 spdlog::logger& logger();
 bool            log_errors(const char* function, const char* file, uint line);
 void            clear_errors();
+
+class Shader
+{
+public:
+  Shader();
+  ~Shader();
+  void use() const;
+  void free();
+  Shader(const Shader&) = delete;
+  Shader(Shader&&)      = delete;
+
+private:
+  uint32_t mId = 0;
+};
 
 }  // namespace view

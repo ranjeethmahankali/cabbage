@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22.0)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -11,7 +11,7 @@ endif()
 
 set(VCPKG_FEATURE_FLAGS versions)
 if (WIN32)
-   set(VCPKG_TARGET_TRIPLET x64-windows)
+   set(VCPKG_TARGET_TRIPLET x64-windows-static)
    file(TO_CMAKE_PATH $ENV{VCPKG_PATH} VCPKG_PATH)
    set(CMAKE_TOOLCHAIN_FILE ${VCPKG_PATH}/scripts/buildsystems/vcpkg.cmake)
    add_compile_definitions(_USE_MATH_DEFINES)
@@ -27,10 +27,13 @@ find_package(glm CONFIG REQUIRED)
 find_package(glew REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+find_package(Freetype REQUIRED)
 
 add_executable(cabbage
   Main.cpp
   GLUtil.cpp
+  Game.cpp
 )
 target_link_libraries(cabbage PRIVATE
   box2d::box2d
@@ -39,5 +42,12 @@ target_link_libraries(cabbage PRIVATE
   glm::glm
   spdlog::spdlog
   spdlog::spdlog_header_only
+  fmt::fmt
+  Freetype::Freetype
 )
 target_include_directories(cabbage PRIVATE "./")
+
+if (WIN32)
+  set_property(TARGET cabbage PROPERTY
+      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()

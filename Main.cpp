@@ -1,6 +1,8 @@
 #include <iostream>
 
 #include <GLUtil.h>
+#include <Game.h>
+#include <box2d/box2d.h>
 
 static void glfw_error_cb(int error, const char* desc)
 {
@@ -24,8 +26,8 @@ int initGL(GLFWwindow*& window)
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-  std::string title = "Potato";
-  window            = glfwCreateWindow(1920, 960, title.c_str(), nullptr, nullptr);
+  std::string title = "Cabbage";
+  window = glfwCreateWindow(Arena::Width, Arena::Height, title.c_str(), nullptr, nullptr);
   if (window == nullptr) {
     return 1;
   }
@@ -53,7 +55,7 @@ int initGL(GLFWwindow*& window)
   return 0;
 }
 
-int main(int argc, char** argv)
+static int game()
 {
   GLFWwindow* window = nullptr;
   try {
@@ -62,13 +64,22 @@ int main(int argc, char** argv)
       view::logger().error("Failed to initialize the viewier. Error code {}.", err);
       return err;
     }
-    // TODO: Initialize and use shader
-    while (!glfwWindowShouldClose(window)) {
-      glfwPollEvents();
-      glClearColor(0.1f, 0.1f, 0.1f, 1.f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      // TODO: Draw stuff here.
-      glfwSwapBuffers(window);
+    {
+      b2World world(b2Vec2(0.f, 0.f));
+      Arena   arena(world);
+      arena.advance(42);
+      arena.advance(23);
+      view::Shader shader;
+      shader.use();
+      // TODO: Initialize and use shader
+      while (!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+        glClearColor(0.1f, 0.1f, 0.1f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // Draw stuff.
+        arena.draw();
+        glfwSwapBuffers(window);
+      }
     }
     view::logger().info("Closing window...\n");
     glfwDestroyWindow(window);
@@ -80,4 +91,9 @@ int main(int argc, char** argv)
     return 1;
   }
   return 0;
+}
+
+int main(int argc, char** argv)
+{
+  return game();
 }
