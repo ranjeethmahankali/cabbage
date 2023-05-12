@@ -351,7 +351,7 @@ const float Height = {hh:.8f};
 const int MaxData = 50;
 const vec4 White = vec4(1,1,1,1);
 const vec4 Invisible = vec4(0, 0, 0, 0);
-const float BallFeather = 0.95;
+const float BallFeather = 0.75;
 
 const int NOSQUARE       = {nosq};
 const int SQUARE         = {sq};
@@ -430,10 +430,9 @@ void main()
     vec2 d = fc - ObjPos;
     d.x /= BallSizeX;
     d.y /= BallSizeY;
-    float r = min(1, max(0, 1 - sqrt(dot(d, d))));
-    r = 1 - pow(1 - r, 5);
-    if (r > 0) FragColor = vec4(r, r, r, 1);
-    else FragColor = Invisible;
+    float r = sqrt(dot(d, d));
+    r = min(1, max(0, (r - BallFeather) / (1. - BallFeather)));
+    FragColor = (1. - r) * White + r * Invisible;
   }} else if (FType == BALL_SPWN) {{
     vec2 d = fc - ObjPos;
     const float s1 = 0.25;
