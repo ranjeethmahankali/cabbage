@@ -22,17 +22,27 @@ enum Type : uint16_t
   T_WALL      = 32,
 };
 
-// enum CollisionMask : int
-// {
-//   M_NOSQUARE = 0,
-//   M_SQUARE =
-// };
+constexpr inline Type operator|(Type a, Type b)
+{
+  return Type(uint16_t(a) | uint16_t(b));
+}
+
+enum CollisionMask : uint16_t
+{
+  M_NOSQUARE  = 0,
+  M_SQUARE    = T_BALL,
+  M_BALL_SPWN = T_BALL,
+  M_NOBALL    = 0,
+  M_BALL      = T_SQUARE | T_BALL_SPWN | T_WALL,
+  M_WALL      = T_BALL,
+};
 
 struct Object
 {
   b2Fixture* mFixture = nullptr;
   b2Body*    mBody    = nullptr;
   glm::vec2  mPos     = {0.f, 0.f};
+  int        mIndex   = -1;
   union
   {
     struct
@@ -50,15 +60,17 @@ struct Object
 class Arena
 {
 public:
-  static constexpr uint32_t NX         = 7;
-  static constexpr uint32_t NY         = 8;
-  static constexpr uint32_t NGrid      = NX * NY;
-  static constexpr uint32_t NMaxBalls  = 2048;
-  static constexpr float    CellSize   = 100.f;
-  static constexpr float    SquareSize = 85.f;
-  static constexpr float    Height     = float(NY) * CellSize;
-  static constexpr float    Width      = float(NX) * CellSize;
-  static constexpr float    BallRadius = CellSize * 0.1f;
+  static constexpr uint32_t NX               = 7;
+  static constexpr uint32_t NY               = 8;
+  static constexpr uint32_t NGrid            = NX * NY;
+  static constexpr uint32_t NMaxBalls        = 2048;
+  static constexpr float    CellSize         = 100.f;
+  static constexpr float    SquareSize       = 85.f;
+  static constexpr float    Height           = float(NY) * CellSize;
+  static constexpr float    Width            = float(NX) * CellSize;
+  static constexpr float    BallRadius       = CellSize * 0.1f;
+  static constexpr float    BallSpawnRelSize = 0.55;
+  static constexpr float    BallSpawnSize    = BallSpawnRelSize * SquareSize;
 
   explicit Arena(b2World& world);
   void draw() const;

@@ -352,6 +352,7 @@ const int MaxData = 50;
 const vec4 White = vec4(1,1,1,1);
 const vec4 Invisible = vec4(0, 0, 0, 0);
 const float BallFeather = 0.75;
+const float BallSpawnSize = {bspsize};
 
 const int NOSQUARE       = {nosq};
 const int SQUARE         = {sq};
@@ -435,9 +436,9 @@ void main()
     FragColor = (1. - r) * White + r * Invisible;
   }} else if (FType == BALL_SPWN) {{
     vec2 d = fc - ObjPos;
-    const float s1 = 0.25;
-    const float s2 = 0.45;
-    const float s3 = 0.55;
+    const float s1 = BallSpawnSize - 0.3;
+    const float s2 = BallSpawnSize - 0.1;
+    const float s3 = BallSpawnSize;
     bool b1 = abs(d.x) < SqSizeX * s1 && abs(d.y) < SqSizeY * s1;
     bool b2 = abs(d.x) < SqSizeX * s2 && abs(d.y) < SqSizeY * s2;
     bool b3 = abs(d.x) < SqSizeX * s3 && abs(d.y) < SqSizeY * s3;
@@ -460,7 +461,8 @@ void main()
                      fmt::arg("hh", Arena::Height),
                      fmt::arg("xx", Arena::SquareSize / Arena::Width),
                      fmt::arg("yy", Arena::SquareSize / Arena::Height),
-                     fmt::arg("CharConstants", CharAtlas::get().glslConstants()));
+                     fmt::arg("CharConstants", CharAtlas::get().glslConstants()),
+                     fmt::arg("bspsize", Arena::BallSpawnRelSize));
 }
 
 static void checkShaderCompilation(uint32_t id, uint32_t type)

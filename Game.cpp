@@ -12,13 +12,13 @@ Object::Object(Type type)
     : mType(type)
 {}
 
-static glm::vec2 calcSquareShape(int si, std::array<b2Vec2, 4>& verts)
+static glm::vec2 calcSquareShape(int si, float size, std::array<b2Vec2, 4>& verts)
 {
   glm::vec2 center =
     Arena::CellSize *
     (glm::vec2 {0.5f, 0.5f} + glm::vec2 {float(si % Arena::NX), float(si / Arena::NX)});
-  glm::vec2                y = {0.f, 0.5f * Arena::SquareSize};
-  glm::vec2                x = {0.5f * Arena::SquareSize, 0.f};
+  glm::vec2                y = {0.f, 0.5f * size};
+  glm::vec2                x = {0.5f * size, 0.f};
   std::array<glm::vec2, 4> temp;
   temp[0] = center - x - y;
   temp[1] = center + x - y;
@@ -42,16 +42,18 @@ Arena::Arena(b2World& world)
   initGridBody();
   auto& grid = *mGrid;
   for (uint32_t i = 0; i < squares.size(); ++i) {
-    auto&                 dst = squares[i];
+    auto& dst  = squares[i];
+    dst.mIndex = int(i);
     b2PolygonShape        shape;
     std::array<b2Vec2, 4> verts;
-    dst.mPos = calcSquareShape(i, verts);
+    dst.mPos = calcSquareShape(i, Arena::SquareSize, verts);
     shape.Set(verts.data(), int(verts.size()));
     dst.mFixture                        = grid.CreateFixture(&shape, 0.f);
     dst.mFixture->GetUserData().pointer = reinterpret_cast<uintptr_t>(&dst);
   }
   for (uint32_t i = 0; i < balls.size(); ++i) {
-    auto&     dst = balls[i];
+    auto& dst  = balls[i];
+    dst.mIndex = int(i);
     b2BodyDef def;
     def.type   = b2_dynamicBody;
     def.bullet = true;
@@ -120,6 +122,17 @@ Arena::~Arena()
   freeGL();
 }
 
+static void updateSquareAttributes(Object& sq)
+{
+  if (sq.mType == T_BALL_SPWN) {
+    std::array<b2Vec2, 4> verts;
+    sq.mPos     = calcSquareShape(sq.mIndex, Arena::SquareSize, verts);
+    auto& shape = *(dynamic_cast<b2PolygonShape*>(sq.mFixture->GetShape()));
+    shape.Set(verts.data(), int(verts.size()));
+    sq.mFixture->SetSensor(true);
+  }
+}
+
 int Arena::advance(uint32_t seed)
 {
   auto squares = getSquares();
@@ -154,7 +167,8 @@ int Arena::advance(uint32_t seed)
   for (auto& sq : getRow(NY - 1)) {
     // TODO: Weighted sampling.
     sq.mType = Type(1 << (std::rand() % 3));
-    // TODO: Properly assign mData.
+    updateSquareAttributes(sq);
+    // TODO: Properly assign mData with some randomness.
     if (sq.mType == T_SQUARE) {
       sq.mData = mCounter;
     }
