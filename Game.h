@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <glm/glm.hpp>
 #include <span>
 #include <string>
@@ -11,7 +12,7 @@ class b2Body;
 class b2World;
 class b2Fixture;
 
-enum Type : int
+enum Type : uint16_t
 {
   T_NOSQUARE  = 1,
   T_SQUARE    = 2,

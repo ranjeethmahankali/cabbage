@@ -85,7 +85,7 @@ static void initAttributes()
   GL_CALL(glEnableVertexAttribArray(0));
   GL_CALL(glVertexAttribIPointer(1, 1, GL_INT, stride, dataOffset));
   GL_CALL(glEnableVertexAttribArray(1));
-  GL_CALL(glVertexAttribIPointer(2, 1, GL_INT, stride, typeOffset));
+  GL_CALL(glVertexAttribIPointer(2, 1, GL_UNSIGNED_SHORT, stride, typeOffset));
   GL_CALL(glEnableVertexAttribArray(2));
 }
 
@@ -153,7 +153,7 @@ int Arena::advance(uint32_t seed)
   std::srand(seed);
   for (auto& sq : getRow(NY - 1)) {
     // TODO: Weighted sampling.
-    sq.mType = Type(std::rand() % 3);
+    sq.mType = Type(1 << (std::rand() % 3));
     // TODO: Properly assign mData.
     if (sq.mType == T_SQUARE) {
       sq.mData = mCounter;
