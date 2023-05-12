@@ -13,12 +13,19 @@ class b2Fixture;
 
 enum Type : int
 {
-  NOSQUARE  = 0,
-  SQUARE    = 1,
-  BALL_SPWN = 2,
-  NOBALL    = 3,
-  BALL      = 4,
+  T_NOSQUARE  = 1,
+  T_SQUARE    = 2,
+  T_BALL_SPWN = 4,
+  T_NOBALL    = 8,
+  T_BALL      = 16,
+  T_WALL      = 32,
 };
+
+// enum CollisionMask : int
+// {
+//   M_NOSQUARE = 0,
+//   M_SQUARE =
+// };
 
 struct Object
 {

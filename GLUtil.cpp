@@ -308,11 +308,11 @@ void main() {{
 }}
 )";
   return fmt::format(sTemplate,
-                     fmt::arg("nosq", int(NOSQUARE)),
-                     fmt::arg("sq", int(SQUARE)),
-                     fmt::arg("bspwn", int(BALL_SPWN)),
-                     fmt::arg("nbl", int(NOBALL)),
-                     fmt::arg("bl", int(BALL)),
+                     fmt::arg("nosq", int(T_NOSQUARE)),
+                     fmt::arg("sq", int(T_SQUARE)),
+                     fmt::arg("bspwn", int(T_BALL_SPWN)),
+                     fmt::arg("nbl", int(T_NOBALL)),
+                     fmt::arg("bl", int(T_BALL)),
                      fmt::arg("xx", Arena::SquareSize / Arena::Width),
                      fmt::arg("yy", Arena::SquareSize / Arena::Height),
                      fmt::arg("bsizex", GlslBallDim.x),
@@ -449,11 +449,11 @@ void main()
 }}
 )";
   return fmt::format(sTemplate,
-                     fmt::arg("nosq", int(NOSQUARE)),
-                     fmt::arg("sq", int(SQUARE)),
-                     fmt::arg("bspwn", int(BALL_SPWN)),
-                     fmt::arg("nbl", int(NOBALL)),
-                     fmt::arg("bl", int(BALL)),
+                     fmt::arg("nosq", int(T_NOSQUARE)),
+                     fmt::arg("sq", int(T_SQUARE)),
+                     fmt::arg("bspwn", int(T_BALL_SPWN)),
+                     fmt::arg("nbl", int(T_NOBALL)),
+                     fmt::arg("bl", int(T_BALL)),
                      fmt::arg("bsizex", GlslBallDim.x),
                      fmt::arg("bsizey", GlslBallDim.y),
                      fmt::arg("ww", Arena::Width),

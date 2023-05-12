@@ -36,9 +36,9 @@ Arena::Arena(b2World& world)
     : mWorld(world)
 {
   auto squares = getSquares();
-  std::fill(squares.begin(), squares.end(), Object(NOSQUARE));
+  std::fill(squares.begin(), squares.end(), Object(T_NOSQUARE));
   auto balls = getBalls();
-  std::fill(balls.begin(), balls.end(), Object(NOBALL));
+  std::fill(balls.begin(), balls.end(), Object(T_NOBALL));
   initGridBody();
   auto& grid = *mGrid;
   for (uint32_t i = 0; i < squares.size(); ++i) {
@@ -124,7 +124,7 @@ int Arena::advance(uint32_t seed)
 {
   auto squares = getSquares();
   if (std::any_of(squares.begin(), squares.begin() + NX, [](const Object& sq) {
-        return sq.mType == SQUARE;
+        return sq.mType == T_SQUARE;
       })) {
     return 1;
   }
@@ -155,7 +155,7 @@ int Arena::advance(uint32_t seed)
     // TODO: Weighted sampling.
     sq.mType = Type(std::rand() % 3);
     // TODO: Properly assign mData.
-    if (sq.mType == SQUARE) {
+    if (sq.mType == T_SQUARE) {
       sq.mData = mCounter;
     }
   }
@@ -207,5 +207,5 @@ void Arena::addBall()
 {
   auto& ball = getBalls()[mNumBalls++];
   ball.mPos  = glm::vec2(mBallX, BallRadius);
-  ball.mType = BALL;
+  ball.mType = T_BALL;
 }
