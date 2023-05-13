@@ -70,7 +70,7 @@ static int game()
       world.SetContactListener(&listener);
       Arena arena(world);
       arena.advance(42);
-      // arena.advance(23);
+      arena.advance(23);
       view::Shader shader;
       shader.use();
       // debug

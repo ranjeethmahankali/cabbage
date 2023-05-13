@@ -201,6 +201,13 @@ static void updateSquareAttributes(Object& sq)
     shape.Set(verts.data(), int(verts.size()));
     sq.mFixture->SetSensor(true);
   }
+  if (sq.mType == T_SQUARE) {
+    std::array<b2Vec2, 4> verts;
+    sq.mPos     = calcSquareShape(sq.mIndex, Arena::SquareSize, verts);
+    auto& shape = *(dynamic_cast<b2PolygonShape*>(sq.mFixture->GetShape()));
+    shape.Set(verts.data(), int(verts.size()));
+    setSquare(sq);
+  }
 }
 
 int Arena::advance(uint32_t seed)
@@ -223,7 +230,11 @@ int Arena::advance(uint32_t seed)
       uint32_t fi = (first++) * NX;
       uint32_t ni = (next++) * NX;
       for (uint32_t i = 0; i < NX; ++i) {
-        std::swap(squares[fi++].mAttributes, squares[ni++].mAttributes);
+        auto& left  = squares[fi++];
+        auto& right = squares[ni++];
+        std::swap(left.mAttributes, right.mAttributes);
+        updateSquareAttributes(left);
+        updateSquareAttributes(right);
       }
       if (next == last) {
         next = middle;
@@ -241,7 +252,6 @@ int Arena::advance(uint32_t seed)
     // TODO: Properly assign mData with some randomness.
     if (sq.mType == T_SQUARE) {
       sq.mData = mCounter;
-      setSquare(sq);
     }
   }
   ++mCounter;
