@@ -65,14 +65,16 @@ static int game()
       return err;
     }
     {
-      b2World world(b2Vec2(0.f, 0.f));
-      Arena   arena(world);
+      ContactListener listener;
+      b2World         world(b2Vec2(0.f, 0.f));
+      world.SetContactListener(&listener);
+      Arena arena(world);
       arena.advance(42);
-      arena.advance(23);
+      // arena.advance(23);
       view::Shader shader;
       shader.use();
       // debug
-      arena.shoot(M_PI / 4.f);
+      arena.shoot(M_PI / 2.5f);
       // debug
       // TODO: Initialize and use shader
       while (!glfwWindowShouldClose(window)) {

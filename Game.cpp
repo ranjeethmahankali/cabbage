@@ -3,7 +3,6 @@
 #include <box2d/b2_body.h>
 #include <box2d/b2_math.h>
 #include <box2d/b2_polygon_shape.h>
-#include <box2d/box2d.h>
 #include <fmt/core.h>
 #include <algorithm>
 #include <cstdint>
@@ -50,41 +49,33 @@ static void setBall(Object& ball)
   ball.mBody->SetEnabled(true);
 }
 
-class ContactListener : public b2ContactListener
+Object* ContactListener::getA(b2Contact* contact) const
 {
-  Object* getA(b2Contact* contact) const
-  {
-    return reinterpret_cast<Object*>(
-      contact->GetFixtureA()->GetBody()->GetUserData().pointer);
-  }
+  return reinterpret_cast<Object*>(contact->GetFixtureA()->GetUserData().pointer);
+}
 
-  Object* getB(b2Contact* contact) const
-  {
-    return reinterpret_cast<Object*>(
-      contact->GetFixtureB()->GetBody()->GetUserData().pointer);
-  }
+Object* ContactListener::getB(b2Contact* contact) const
+{
+  return reinterpret_cast<Object*>(contact->GetFixtureB()->GetUserData().pointer);
+}
 
-  void BeginContact(b2Contact* contact)
-  {
-    Object* sq   = getA(contact);
-    Object* ball = getB(contact);
-    if (sq && ball) {
-      if (sq->mType == T_BALL) {
-        std::swap(sq, ball);
-        if (sq->mType == T_SQUARE) {
-          if (--(sq->mData) == 0) {
-            setNoSquare(*sq);
-          }
-        }
+void ContactListener::BeginContact(b2Contact* contact)
+{
+  Object* sq   = getA(contact);
+  Object* ball = getB(contact);
+  if (sq && ball) {
+    if (sq->mType == T_BALL) {
+      std::swap(sq, ball);
+    }
+    if (sq->mType == T_SQUARE) {
+      if (--(sq->mData) == 0) {
+        setNoSquare(*sq);
       }
     }
   }
+}
 
-  void EndContact(b2Contact* contact)
-  {
-    // TODO.
-  }
-};
+void ContactListener::EndContact(b2Contact* contact) {}
 
 Object::Object(Type type)
     : mType(type)
