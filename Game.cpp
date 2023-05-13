@@ -8,6 +8,84 @@
 #include <algorithm>
 #include <cstdint>
 
+static void setNoSquare(Object& sq)
+{
+  sq.mType = T_NOSQUARE;
+  b2Filter filter;
+  filter.categoryBits = T_NOSQUARE;
+  filter.maskBits     = M_NOSQUARE;
+  filter.groupIndex   = G_NOSQUARE;
+  sq.mFixture->SetFilterData(filter);
+}
+
+static void setSquare(Object& sq)
+{
+  sq.mType = T_SQUARE;
+  b2Filter filter;
+  filter.categoryBits = T_SQUARE;
+  filter.maskBits     = M_SQUARE;
+  filter.groupIndex   = G_SQUARE;
+  sq.mFixture->SetFilterData(filter);
+}
+
+static void setNoBall(Object& ball)
+{
+  ball.mType = T_NOBALL;
+  b2Filter filter;
+  filter.categoryBits = T_NOBALL;
+  filter.maskBits     = M_NOBALL;
+  filter.groupIndex   = G_NOBALL;
+  ball.mFixture->SetFilterData(filter);
+  ball.mBody->SetEnabled(false);
+}
+
+static void setBall(Object& ball)
+{
+  ball.mType = T_BALL;
+  b2Filter filter;
+  filter.categoryBits = T_BALL;
+  filter.maskBits     = M_BALL;
+  filter.groupIndex   = G_BALL;
+  ball.mFixture->SetFilterData(filter);
+  ball.mBody->SetEnabled(true);
+}
+
+class ContactListener : public b2ContactListener
+{
+  Object* getA(b2Contact* contact) const
+  {
+    return reinterpret_cast<Object*>(
+      contact->GetFixtureA()->GetBody()->GetUserData().pointer);
+  }
+
+  Object* getB(b2Contact* contact) const
+  {
+    return reinterpret_cast<Object*>(
+      contact->GetFixtureB()->GetBody()->GetUserData().pointer);
+  }
+
+  void BeginContact(b2Contact* contact)
+  {
+    Object* sq   = getA(contact);
+    Object* ball = getB(contact);
+    if (sq && ball) {
+      if (sq->mType == T_BALL) {
+        std::swap(sq, ball);
+        if (sq->mType == T_SQUARE) {
+          if (--(sq->mData) == 0) {
+            setNoSquare(*sq);
+          }
+        }
+      }
+    }
+  }
+
+  void EndContact(b2Contact* contact)
+  {
+    // TODO.
+  }
+};
+
 Object::Object(Type type)
     : mType(type)
 {}
@@ -36,8 +114,7 @@ Arena::Arena(b2World& world)
     : mWorld(world)
 {
   auto squares = getSquares();
-  std::fill(squares.begin(), squares.end(), Object(T_NOSQUARE));
-  auto balls = getBalls();
+  auto balls   = getBalls();
   std::fill(balls.begin(), balls.end(), Object(T_NOBALL));
   initGridBody();
   auto& grid = *mGrid;
@@ -50,6 +127,7 @@ Arena::Arena(b2World& world)
     shape.Set(verts.data(), int(verts.size()));
     dst.mFixture                        = grid.CreateFixture(&shape, 0.f);
     dst.mFixture->GetUserData().pointer = reinterpret_cast<uintptr_t>(&dst);
+    setNoSquare(dst);
   }
   for (uint32_t i = 0; i < balls.size(); ++i) {
     auto& dst  = balls[i];
@@ -60,11 +138,13 @@ Arena::Arena(b2World& world)
     def.position.Set(0.f, 0.f);
     def.userData.pointer = reinterpret_cast<uintptr_t>(&dst);
     dst.mBody            = mWorld.CreateBody(&def);
+    def.enabled          = false;
     b2CircleShape shape;
     shape.m_p.Set(0.f, 0.f);
     shape.m_radius                      = BallRadius;
     dst.mFixture                        = dst.mBody->CreateFixture(&shape, 0.f);
     dst.mFixture->GetUserData().pointer = reinterpret_cast<uintptr_t>(&dst);
+    setNoBall(dst);
   }
   addBall();
   // Prep for rendering.
@@ -98,8 +178,7 @@ void Arena::initGL()
   GL_CALL(glGenBuffers(1, &mVbo));
   bindGL();
   // Copy data.
-  GL_CALL(glBufferData(
-    GL_ARRAY_BUFFER, sizeof(Object) * mObjects.size(), mObjects.data(), GL_DYNAMIC_DRAW));
+  copyGLData();
   // Initialize the attributes.
   initAttributes();
   unbindGL();
@@ -126,7 +205,7 @@ static void updateSquareAttributes(Object& sq)
 {
   if (sq.mType == T_BALL_SPWN) {
     std::array<b2Vec2, 4> verts;
-    sq.mPos     = calcSquareShape(sq.mIndex, Arena::SquareSize, verts);
+    sq.mPos     = calcSquareShape(sq.mIndex, Arena::BallSpawnSize, verts);
     auto& shape = *(dynamic_cast<b2PolygonShape*>(sq.mFixture->GetShape()));
     shape.Set(verts.data(), int(verts.size()));
     sq.mFixture->SetSensor(true);
@@ -171,6 +250,7 @@ int Arena::advance(uint32_t seed)
     // TODO: Properly assign mData with some randomness.
     if (sq.mType == T_SQUARE) {
       sq.mData = mCounter;
+      setSquare(sq);
     }
   }
   ++mCounter;
@@ -182,10 +262,40 @@ int Arena::advance(uint32_t seed)
   return 0;
 }
 
+void Arena::shoot(float angle)
+{
+  auto balls = getBalls();
+  for (uint32_t i = 0; i < mNumBalls; ++i) {
+    balls[i].mBody->SetLinearVelocity(
+      b2Vec2(std::cos(angle) * BallVelocity, std::sin(angle) * BallVelocity));
+  }
+}
+
+void Arena::step()
+{
+  auto balls = getBalls();
+  for (uint32_t i = 0; i < mNumBalls; ++i) {
+    auto& ball = balls[i];
+    auto  pos  = ball.mBody->GetPosition();
+    ball.mPos  = {pos.x, pos.y};
+    // view::logger().info("Position: ({}, {})", pos.x, pos.y);
+  }
+  // Prep for rendering.
+  bindGL();
+  copyGLData();
+  unbindGL();
+}
+
 void Arena::bindGL() const
 {
   GL_CALL(glBindVertexArray(mVao));
   GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, mVbo));
+}
+
+void Arena::copyGLData() const
+{
+  GL_CALL(glBufferData(
+    GL_ARRAY_BUFFER, sizeof(Object) * mObjects.size(), mObjects.data(), GL_DYNAMIC_DRAW));
 }
 
 void Arena::unbindGL() const
@@ -221,5 +331,6 @@ void Arena::addBall()
 {
   auto& ball = getBalls()[mNumBalls++];
   ball.mPos  = glm::vec2(mBallX, BallRadius);
-  ball.mType = T_BALL;
+  ball.mBody->SetTransform(b2Vec2(ball.mPos.x, ball.mPos.y), 0.f);
+  setBall(ball);
 }

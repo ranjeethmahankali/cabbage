@@ -12,6 +12,16 @@ class b2Body;
 class b2World;
 class b2Fixture;
 
+enum GroupIndex : int16_t
+{
+  G_NOSQUARE  = 1,
+  G_SQUARE    = 2,
+  G_BALL_SPWN = 3,
+  G_NOBALL    = 4,
+  G_BALL      = 5,
+  G_WALL      = 6,
+};
+
 enum Type : uint16_t
 {
   T_NOSQUARE  = 1,
@@ -71,10 +81,13 @@ public:
   static constexpr float    BallRadius       = CellSize * 0.1f;
   static constexpr float    BallSpawnRelSize = 0.55;
   static constexpr float    BallSpawnSize    = BallSpawnRelSize * SquareSize;
+  static constexpr float    BallVelocity     = 5.f;
 
   explicit Arena(b2World& world);
   void draw() const;
   int  advance(uint32_t seed);
+  void shoot(float angle);
+  void step();
   ~Arena();
 
 private:
@@ -92,6 +105,7 @@ private:
   void              initGL();
   void              freeGL();
   void              bindGL() const;
+  void              copyGLData() const;
   void              unbindGL() const;
   std::span<Object> getSquares();
   std::span<Object> getRow(uint32_t i);

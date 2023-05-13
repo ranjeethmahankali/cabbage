@@ -71,6 +71,9 @@ static int game()
       arena.advance(23);
       view::Shader shader;
       shader.use();
+      // debug
+      arena.shoot(M_PI / 4.f);
+      // debug
       // TODO: Initialize and use shader
       while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -78,6 +81,8 @@ static int game()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // Draw stuff.
         arena.draw();
+        world.Step(1, 3, 3);
+        arena.step();
         glfwSwapBuffers(window);
       }
     }
