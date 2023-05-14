@@ -75,8 +75,6 @@ void ContactListener::BeginContact(b2Contact* contact)
   }
 }
 
-void ContactListener::EndContact(b2Contact* contact) {}
-
 Object::Object(Type type)
     : mType(type)
 {}
@@ -116,8 +114,10 @@ Arena::Arena(b2World& world)
     std::array<b2Vec2, 4> verts;
     dst.mPos = calcSquareShape(i, Arena::SquareSize, verts);
     shape.Set(verts.data(), int(verts.size()));
-    dst.mFixture                        = grid.CreateFixture(&shape, 0.f);
+    dst.mFixture = grid.CreateFixture(&shape, 0.f);
+    dst.mFixture->SetDensity(1.f);
     dst.mFixture->GetUserData().pointer = reinterpret_cast<uintptr_t>(&dst);
+    dst.mFixture->SetRestitution(1.f);
     setNoSquare(dst);
   }
   for (uint32_t i = 0; i < balls.size(); ++i) {
@@ -132,8 +132,10 @@ Arena::Arena(b2World& world)
     def.enabled          = false;
     b2CircleShape shape;
     shape.m_p.Set(0.f, 0.f);
-    shape.m_radius                      = BallRadius;
-    dst.mFixture                        = dst.mBody->CreateFixture(&shape, 0.f);
+    shape.m_radius = BallRadius;
+    dst.mFixture   = dst.mBody->CreateFixture(&shape, 0.f);
+    dst.mFixture->SetDensity(1.f);
+    dst.mFixture->SetRestitution(1.f);
     dst.mFixture->GetUserData().pointer = reinterpret_cast<uintptr_t>(&dst);
     setNoBall(dst);
   }
@@ -311,6 +313,7 @@ void Arena::initGridBody()
   def.type = b2_staticBody;
   def.position.Set(0.f, 0.f);
   mGrid = mWorld.CreateBody(&def);
+  mGrid->SetAwake(true);
 }
 
 std::span<Object> Arena::getSquares()

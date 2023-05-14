@@ -119,5 +119,4 @@ class ContactListener : public b2ContactListener
   Object* getA(b2Contact* contact) const;
   Object* getB(b2Contact* contact) const;
   void    BeginContact(b2Contact* contact);
-  void    EndContact(b2Contact* contact);
 };
