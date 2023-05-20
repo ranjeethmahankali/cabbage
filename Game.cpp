@@ -9,7 +9,8 @@
 #include <cstdint>
 
 namespace scale {
-static constexpr float Factor    = 100.f;
+// Assume 1 pixel is 1 mm. The units of box2 are meters.
+static constexpr float Factor    = 250.f;
 static constexpr float InvFactor = 1.f / Factor;
 
 inline b2Vec2 tob2(float x, float y)

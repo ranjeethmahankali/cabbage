@@ -82,7 +82,7 @@ public:
   static constexpr float    BallRadius       = CellSize * 0.1f;
   static constexpr float    BallSpawnRelSize = 0.55;
   static constexpr float    BallSpawnSize    = BallSpawnRelSize * SquareSize;
-  static constexpr float    BallVelocity     = 500.f;
+  static constexpr float    BallVelocity     = 750.f;
 
   explicit Arena(b2World& world);
   ~Arena();

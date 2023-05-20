@@ -56,7 +56,31 @@ int initGL(GLFWwindow*& window)
   return 0;
 }
 
-b2Body* debugPtr = nullptr;
+struct TimeControl
+{
+  float mTimeScale = 1.f;
+  float mFps       = 60.f;
+  float mDelta     = 0.f;
+
+private:
+  void calc() { mDelta = mTimeScale / mFps; }
+
+public:
+  TimeControl() { calc(); }
+  void setScale(float scale)
+  {
+    mTimeScale = scale;
+    calc();
+  }
+  void setFps(float fps)
+  {
+    mFps = fps;
+    calc();
+  }
+};
+
+static float sTimeScale = 1.f;  // Higher timescale means time flows faster.
+static float sFPS       = 60.f;
 
 static int game()
 {
@@ -79,16 +103,23 @@ static int game()
       // debug
       arena.shoot(M_PI / 2.5f);
       // debug
+      TimeControl time;
+      // time.setScale(2.f);
+      logger().info("Delta: {}", time.mDelta);
+      // float prevTime = glfwGetTime();
       // TODO: Initialize and use shader
       while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+        // if (glfwGetTime() - prevTime > time.mDelta) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // Draw stuff.
         arena.draw();
         glfwSwapBuffers(window);
-        world.Step(0.016, 8, 2);
+        world.Step(time.mDelta, 8, 2);
         arena.step();
+        // prevTime += time.mDelta;
+        // }
       }
     }
     logger().info("Closing window...\n");
