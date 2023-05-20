@@ -9,12 +9,22 @@
 #include <cstdint>
 
 namespace scale {
-static constexpr float Factor    = 1.f;
+static constexpr float Factor    = 100.f;
 static constexpr float InvFactor = 1.f / Factor;
 
 inline b2Vec2 tob2(float x, float y)
 {
   return b2Vec2(x * InvFactor, y * InvFactor);
+}
+
+inline float tob2(float x)
+{
+  return x * InvFactor;
+}
+
+inline float fromb2(float x)
+{
+  return x * Factor;
 }
 
 inline b2Vec2 tob2(glm::vec2 v)
@@ -153,7 +163,7 @@ Arena::Arena(b2World& world)
     def.enabled          = false;
     b2CircleShape shape;
     shape.m_p.Set(0.f, 0.f);
-    shape.m_radius = BallRadius;
+    shape.m_radius = scale::tob2(BallRadius);
     dst.mFixture   = dst.mBody->CreateFixture(&shape, 0.1f);
     dst.mFixture->SetRestitution(1.f);
     dst.mFixture->SetFriction(0.f);

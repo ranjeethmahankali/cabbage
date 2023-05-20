@@ -87,7 +87,7 @@ static int game()
         // Draw stuff.
         arena.draw();
         glfwSwapBuffers(window);
-        world.Step(1, 8, 2);
+        world.Step(0.016, 8, 2);
         arena.step();
       }
     }
