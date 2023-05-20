@@ -2,11 +2,12 @@
 
 #include <GLUtil.h>
 #include <Game.h>
+#include <box2d/b2_common.h>
 #include <box2d/box2d.h>
 
 static void glfw_error_cb(int error, const char* desc)
 {
-  view::logger().error("GLFW Error {}: {}", error, desc);
+  logger().error("GLFW Error {}: {}", error, desc);
 }
 
 static void onMouseButton(GLFWwindow* window, int button, int action, int mods) {}
@@ -17,10 +18,10 @@ int initGL(GLFWwindow*& window)
 {
   glfwSetErrorCallback(glfw_error_cb);
   if (!glfwInit()) {
-    view::logger().error("Failed to initialize GLFW.");
+    logger().error("Failed to initialize GLFW.");
     return 1;
   }
-  view::logger().info("Initialized GLFW.");
+  logger().info("Initialized GLFW.");
   // Window setup
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -35,10 +36,10 @@ int initGL(GLFWwindow*& window)
   // OpenGL bindings
   int err = GLEW_OK;
   if ((err = glewInit()) != GLEW_OK) {
-    view::logger().error("Failed to initialize OpenGL bindings: {}", err);
+    logger().error("Failed to initialize OpenGL bindings: {}", err);
     return 1;
   }
-  view::logger().info("OpenGL bindings are ready.");
+  logger().info("OpenGL bindings are ready.");
   int W, H;
   GL_CALL(glfwGetFramebufferSize(window, &W, &H));
   GL_CALL(glViewport(0, 0, W, H));
@@ -55,13 +56,15 @@ int initGL(GLFWwindow*& window)
   return 0;
 }
 
+b2Body* debugPtr = nullptr;
+
 static int game()
 {
   GLFWwindow* window = nullptr;
   try {
     int err = 0;
     if ((err = initGL(window))) {
-      view::logger().error("Failed to initialize the viewier. Error code {}.", err);
+      logger().error("Failed to initialize the viewier. Error code {}.", err);
       return err;
     }
     {
@@ -83,18 +86,18 @@ static int game()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // Draw stuff.
         arena.draw();
-        world.Step(1, 3, 3);
-        arena.step();
         glfwSwapBuffers(window);
+        world.Step(1, 8, 2);
+        arena.step();
       }
     }
-    view::logger().info("Closing window...\n");
+    logger().info("Closing window...\n");
     glfwDestroyWindow(window);
     // TODO: Free shader and other resources.
     glfwTerminate();
   }
   catch (const std::exception& e) {
-    view::logger().critical("Fatal Error: {}", e.what());
+    logger().critical("Fatal Error: {}", e.what());
     return 1;
   }
   return 0;

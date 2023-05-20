@@ -5,7 +5,29 @@
 #include <box2d/b2_polygon_shape.h>
 #include <fmt/core.h>
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
+
+namespace scale {
+static constexpr float Factor    = 1.f;
+static constexpr float InvFactor = 1.f / Factor;
+
+inline b2Vec2 tob2(float x, float y)
+{
+  return b2Vec2(x * InvFactor, y * InvFactor);
+}
+
+inline b2Vec2 tob2(glm::vec2 v)
+{
+  return tob2(v.x, v.y);
+}
+
+inline glm::vec2 fromb2(b2Vec2 v)
+{
+  return glm::vec2(v.x * Factor, v.y * Factor);
+}
+
+}  // namespace scale
 
 static void setNoSquare(Object& sq)
 {
@@ -91,9 +113,8 @@ static glm::vec2 calcSquareShape(int si, float size, std::array<b2Vec2, 4>& vert
   temp[1] = center + x - y;
   temp[2] = center + x + y;
   temp[3] = center - x + y;
-  std::transform(temp.begin(), temp.end(), verts.begin(), [](glm::vec2 v) {
-    return b2Vec2(v[0], v[1]);
-  });
+  std::transform(
+    temp.begin(), temp.end(), verts.begin(), [](glm::vec2 v) { return scale::tob2(v); });
   return center;
 }
 
@@ -114,9 +135,9 @@ Arena::Arena(b2World& world)
     std::array<b2Vec2, 4> verts;
     dst.mPos = calcSquareShape(i, Arena::SquareSize, verts);
     shape.Set(verts.data(), int(verts.size()));
-    dst.mFixture = grid.CreateFixture(&shape, 0.f);
-    dst.mFixture->SetDensity(1.f);
+    dst.mFixture                        = grid.CreateFixture(&shape, 1.f);
     dst.mFixture->GetUserData().pointer = reinterpret_cast<uintptr_t>(&dst);
+    dst.mFixture->SetFriction(0.f);
     dst.mFixture->SetRestitution(1.f);
     setNoSquare(dst);
   }
@@ -133,9 +154,9 @@ Arena::Arena(b2World& world)
     b2CircleShape shape;
     shape.m_p.Set(0.f, 0.f);
     shape.m_radius = BallRadius;
-    dst.mFixture   = dst.mBody->CreateFixture(&shape, 0.f);
-    dst.mFixture->SetDensity(1.f);
+    dst.mFixture   = dst.mBody->CreateFixture(&shape, 0.1f);
     dst.mFixture->SetRestitution(1.f);
+    dst.mFixture->SetFriction(0.f);
     dst.mFixture->GetUserData().pointer = reinterpret_cast<uintptr_t>(&dst);
     setNoBall(dst);
   }
@@ -270,7 +291,7 @@ void Arena::shoot(float angle)
   auto balls = getBalls();
   for (uint32_t i = 0; i < mNumBalls; ++i) {
     balls[i].mBody->SetLinearVelocity(
-      b2Vec2(std::cos(angle) * BallVelocity, std::sin(angle) * BallVelocity));
+      scale::tob2(std::cos(angle) * BallVelocity, std::sin(angle) * BallVelocity));
   }
 }
 
@@ -279,11 +300,8 @@ void Arena::step()
   auto balls = getBalls();
   for (uint32_t i = 0; i < mNumBalls; ++i) {
     auto& ball = balls[i];
-    auto  pos  = ball.mBody->GetPosition();
-    ball.mPos  = {pos.x, pos.y};
-    // view::logger().info("Position: ({}, {})", pos.x, pos.y);
+    ball.mPos  = scale::fromb2(ball.mBody->GetPosition());
   }
-  // Prep for rendering.
   bindGL();
   copyGLData();
   unbindGL();
@@ -333,8 +351,12 @@ std::span<Object> Arena::getBalls()
 
 void Arena::addBall()
 {
-  auto& ball = getBalls()[mNumBalls++];
-  ball.mPos  = glm::vec2(mBallX, BallRadius);
-  ball.mBody->SetTransform(b2Vec2(ball.mPos.x, ball.mPos.y), 0.f);
-  setBall(ball);
+  auto  balls = getBalls();
+  auto& last  = balls[mNumBalls++];
+  setBall(last);
+  for (size_t i = 0; i < mNumBalls; ++i) {
+    auto& ball = balls[i];
+    ball.mPos  = glm::vec2(mBallX, BallRadius);
+    ball.mBody->SetTransform(scale::tob2(ball.mPos.x, ball.mPos.y), 0.f);
+  }
 }

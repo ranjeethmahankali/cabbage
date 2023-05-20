@@ -82,14 +82,16 @@ public:
   static constexpr float    BallRadius       = CellSize * 0.1f;
   static constexpr float    BallSpawnRelSize = 0.55;
   static constexpr float    BallSpawnSize    = BallSpawnRelSize * SquareSize;
-  static constexpr float    BallVelocity     = 5.f;
+  static constexpr float    BallVelocity     = 500.f;
 
   explicit Arena(b2World& world);
-  void draw() const;
-  int  advance(uint32_t seed);
-  void shoot(float angle);
-  void step();
   ~Arena();
+  void              draw() const;
+  int               advance(uint32_t seed);
+  void              shoot(float angle);
+  void              step();
+  std::span<Object> getSquares();
+  std::span<Object> getBalls();
 
 private:
   std::array<Object, NGrid + NMaxBalls> mObjects;
@@ -108,9 +110,7 @@ private:
   void              bindGL() const;
   void              copyGLData() const;
   void              unbindGL() const;
-  std::span<Object> getSquares();
   std::span<Object> getRow(uint32_t i);
-  std::span<Object> getBalls();
   void              addBall();
 };
 

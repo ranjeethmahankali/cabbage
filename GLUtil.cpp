@@ -11,13 +11,13 @@
 
 #include <Font.h>
 
-namespace view {
-
 spdlog::logger& logger()
 {
   static auto sLogger = spdlog::stdout_color_mt("viewer");
   return *sLogger;
 }
+
+namespace view {
 
 bool log_errors(const char* function, const char* file, uint line)
 {

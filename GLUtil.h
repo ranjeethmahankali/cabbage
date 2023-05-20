@@ -18,7 +18,7 @@
     fncall;                                            \
     if (view::log_errors(#fncall, __FILE__, __LINE__)) \
       DEBUG_BREAK;                                     \
-    view::logger().debug("{}: {}", #fncall, __FILE__); \
+    logger().debug("{}: {}", #fncall, __FILE__);       \
   }
 #elif defined NDEBUG
 #define GL_CALL(fncall) fncall
@@ -34,11 +34,12 @@
 
 using uint = GLuint;
 
+spdlog::logger& logger();
+
 namespace view {
 
-spdlog::logger& logger();
-bool            log_errors(const char* function, const char* file, uint line);
-void            clear_errors();
+bool log_errors(const char* function, const char* file, uint line);
+void clear_errors();
 
 class Shader
 {
