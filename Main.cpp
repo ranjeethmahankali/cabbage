@@ -59,7 +59,7 @@ int initGL(GLFWwindow*& window)
 struct TimeControl
 {
   float mTimeScale = 1.f;
-  float mFps       = 60.f;
+  float mFps       = 120.f;
   float mDelta     = 0.f;
 
 private:

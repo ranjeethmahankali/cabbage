@@ -203,7 +203,7 @@ void Arena::initGL()
   GL_CALL(glGenBuffers(1, &mVbo));
   bindGL();
   // Copy data.
-  copyGLData();
+  allocGLData();
   // Initialize the attributes.
   initAttributes();
   unbindGL();
@@ -291,8 +291,7 @@ int Arena::advance(uint32_t seed)
   ++mCounter;
   // Update GL buffers accordingly.
   bindGL();
-  GL_CALL(glBufferSubData(
-    GL_ARRAY_BUFFER, 0, sizeof(Object) * mObjects.size(), mObjects.data()));
+  copyGLData();
   unbindGL();
   return 0;
 }
@@ -324,10 +323,16 @@ void Arena::bindGL() const
   GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, mVbo));
 }
 
-void Arena::copyGLData() const
+void Arena::allocGLData() const
 {
   GL_CALL(glBufferData(
     GL_ARRAY_BUFFER, sizeof(Object) * mObjects.size(), mObjects.data(), GL_DYNAMIC_DRAW));
+}
+
+void Arena::copyGLData() const
+{
+  GL_CALL(glBufferSubData(
+    GL_ARRAY_BUFFER, 0, sizeof(Object) * mObjects.size(), mObjects.data()));
 }
 
 void Arena::unbindGL() const
